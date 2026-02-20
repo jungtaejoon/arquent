@@ -1,0 +1,38 @@
+{
+  "id": "webcam-snapshot-clipboard",
+  "name": "Webcam Snapshot to Clipboard",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "hotkey",
+    "webcam",
+    "clipboard"
+  ],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": {
+      "roots": [
+        "sandbox://captures"
+      ],
+      "ops": [
+        "write",
+        "read"
+      ]
+    },
+    "clipboard_read": false,
+    "clipboard_write": true,
+    "hotkey_register": true,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": {
+      "mode": "user_initiated_only"
+    },
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Sensitive",
+  "user_initiated_required": true,
+  "signature": "IpyjCcPpLKtFZD/Apn4tH1J/Fg/tdsmbt/qM3sb0PnITi9sCgqjcVyhog2fO8SYlLSIK1vdgqMvboH180i5kCQ==",
+  "publisher": null
+}

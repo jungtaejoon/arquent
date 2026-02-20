@@ -1,0 +1,32 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.manual",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "camera.capture",
+      "params": {
+        "mode": "photo",
+        "output_uri": "sandbox://captures/ocr_{{metadata.run_id}}.jpg"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "transform.ocr_text",
+      "params": {
+        "media_uri": "{{state.capture_uri}}"
+      }
+    },
+    {
+      "id": "a3",
+      "action_type": "file.write",
+      "params": {
+        "uri": "sandbox://notes/ocr_{{metadata.run_id}}.txt",
+        "content": "{{state.ocr_text}}"
+      }
+    }
+  ]
+}

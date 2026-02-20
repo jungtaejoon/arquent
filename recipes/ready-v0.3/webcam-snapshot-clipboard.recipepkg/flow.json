@@ -1,0 +1,26 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.hotkey",
+    "params": {
+      "binding": "cmd+shift+8"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "webcam.capture",
+      "params": {
+        "mode": "photo",
+        "output_uri": "sandbox://captures/webcam_{{metadata.run_id}}.jpg"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "clipboard.write",
+      "params": {
+        "media_uri": "{{state.capture_uri}}"
+      }
+    }
+  ]
+}

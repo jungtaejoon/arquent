@@ -1,0 +1,26 @@
+Resolving dependencies...
+Downloading packages...
+  flutter_lints 3.0.2 (6.0.0 available)
+  lints 3.0.0 (6.1.0 available)
+  meta 1.17.0 (1.18.1 available)
+Got dependencies!
+3 packages have newer versions incompatible with dependency constraints.
+Try `flutter pub outdated` for more information.
+Launching lib/main.dart on Chrome in debug mode...
+Waiting for connection from debug service on Chrome...             17.5s
+
+Flutter run key commands.
+r Hot reload. 🔥🔥🔥
+R Hot restart.
+h List all available interactive commands.
+d Detach (terminate "flutter run" but leave application running).
+c Clear the screen
+q Quit (terminate the application on the device).
+
+Debug service listening on ws://127.0.0.1:51194/E3Ubycb6fPc=/ws
+A Dart VM Service on Chrome is available at: http://127.0.0.1:51194/E3Ubycb6fPc=
+The Flutter DevTools debugger and profiler on Chrome is available at: http://127.0.0.1:51194/E3Ubycb6fPc=/devtools/?uri=ws://127.0.0.1:51194/E3Ubycb6fPc=/ws
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.
+Starting application from main method in: org-dartlang-app:/web_entrypoint.dart.

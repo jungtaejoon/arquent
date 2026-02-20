@@ -1,0 +1,29 @@
+{
+  "id": "capture-to-project-sync-inbox",
+  "name": "Capture to Project Sync Inbox",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": ["manual", "camera", "file"],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": {
+      "roots": ["sandbox://captures", "sandbox://sync"],
+      "ops": ["read", "write", "move"]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": {
+      "mode": "user_initiated_only"
+    },
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Sensitive",
+  "user_initiated_required": true,
+  "signature": null,
+  "publisher": null
+}

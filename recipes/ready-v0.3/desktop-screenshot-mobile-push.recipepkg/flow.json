@@ -1,0 +1,24 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.file_watcher",
+    "params": {
+      "path": "sandbox://desktop/screenshots"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "http.request",
+      "params": {
+        "method": "POST",
+        "url": "http://localhost:4000/webhook/mobile-push",
+        "body": {
+          "recipe_id": "desktop-screenshot-mobile-push",
+          "file_uri": "{{input.file_uri}}",
+          "timestamp": "{{metadata.started_at}}"
+        }
+      }
+    }
+  ]
+}

@@ -1,0 +1,24 @@
+{
+  "id": "git-quick-pull",
+  "name": "Git Quick Pull",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": ["hotkey"],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": null,
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": true,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": null,
+  "publisher": null
+}

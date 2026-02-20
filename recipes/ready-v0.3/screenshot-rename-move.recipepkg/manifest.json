@@ -1,0 +1,36 @@
+{
+  "id": "screenshot-rename-move",
+  "name": "Screenshot Rename and Move",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "file"
+  ],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": {
+      "roots": [
+        "sandbox://desktop",
+        "sandbox://projects"
+      ],
+      "ops": [
+        "read",
+        "rename",
+        "move"
+      ]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": "9fubZTqDaiojChDdACZX2kOOyZ4DlgEJx3YHVw7kqvivlO7tZ5NCL6YaT4id3zOpKBVKjMgAW5D4o/+hBqP7CQ==",
+  "publisher": null
+}

@@ -1,0 +1,26 @@
+{
+  "id": "clipboard-regex-formatter",
+  "name": "Clipboard Regex Formatter",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "clipboard"
+  ],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": null,
+    "clipboard_read": true,
+    "clipboard_write": true,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": "SGYyJ/Ng2XA9Lpo1WVFZU820B2Lttz9GPa5OXF07ZyARtOBp2XOk05dOoc0HrGrVtwKnn7GME88ALCt4eEcfDw==",
+  "publisher": null
+}

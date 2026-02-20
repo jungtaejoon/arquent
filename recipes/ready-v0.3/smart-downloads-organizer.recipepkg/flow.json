@@ -1,0 +1,19 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.file_watcher",
+    "params": {
+      "path": "sandbox://downloads"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "file.move",
+      "params": {
+        "uri": "{{input.file_uri}}",
+        "destination": "{{input.route_destination_uri}}"
+      }
+    }
+  ]
+}

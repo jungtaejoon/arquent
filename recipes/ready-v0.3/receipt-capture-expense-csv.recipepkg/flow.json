@@ -1,0 +1,34 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.widget_tap",
+    "params": {
+      "widget_id": "receipt_capture"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "camera.capture",
+      "params": {
+        "mode": "photo",
+        "output_uri": "sandbox://captures/receipt_{{metadata.run_id}}.jpg"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "transform.ocr_receipt",
+      "params": {
+        "media_uri": "{{state.capture_uri}}"
+      }
+    },
+    {
+      "id": "a3",
+      "action_type": "file.write",
+      "params": {
+        "uri": "sandbox://finance/expenses.csv",
+        "content": "{{state.expense_csv_line}}"
+      }
+    }
+  ]
+}

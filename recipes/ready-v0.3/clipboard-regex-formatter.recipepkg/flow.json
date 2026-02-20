@@ -1,0 +1,25 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.clipboard_change",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "transform.regex_clean",
+      "params": {
+        "input_key": "clipboard_text",
+        "trim_whitespace": true,
+        "markdown_link_normalize": true
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "clipboard.write",
+      "params": {
+        "text": "{{state.cleaned_text}}"
+      }
+    }
+  ]
+}

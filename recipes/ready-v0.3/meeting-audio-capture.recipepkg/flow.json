@@ -1,0 +1,17 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.manual",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "microphone.record",
+      "params": {
+        "max_seconds": 1800,
+        "output_uri": "sandbox://captures/meeting_{{metadata.run_id}}.m4a"
+      }
+    }
+  ]
+}

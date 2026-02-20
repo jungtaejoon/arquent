@@ -1,0 +1,18 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.hotkey",
+    "params": {
+      "binding": "cmd+shift+g"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "command.execute_allowlist",
+      "params": {
+        "command": "git pull"
+      }
+    }
+  ]
+}

@@ -1,0 +1,19 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.widget_tap",
+    "params": {
+      "widget_id": "voice_idea"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "microphone.record",
+      "params": {
+        "max_seconds": 60,
+        "output_uri": "sandbox://sync/ideas/idea_{{metadata.run_id}}.m4a"
+      }
+    }
+  ]
+}

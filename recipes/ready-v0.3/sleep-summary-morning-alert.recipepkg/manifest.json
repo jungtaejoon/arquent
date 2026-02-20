@@ -1,0 +1,33 @@
+{
+  "id": "sleep-summary-morning-alert",
+  "name": "Sleep Summary Morning Alert",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "manual",
+    "health",
+    "notification"
+  ],
+  "permissions": {
+    "notification_send": true,
+    "network_request": null,
+    "file_access": null,
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": {
+      "types": [
+        "sleep_summary"
+      ],
+      "aggregation": "daily_summary"
+    },
+    "health_export": false
+  },
+  "risk_level": "Sensitive",
+  "user_initiated_required": true,
+  "signature": "yCtCwzZFIFelDlHTlKzmFosge9L3Xuit1hJfyQ7ZkCPMXSViWCTVdpBOYRhT9/5KW/bFzn1Bx0I7+UPoiKs9Bg==",
+  "publisher": null
+}

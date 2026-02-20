@@ -1,0 +1,32 @@
+{
+  "id": "qr-capture-open",
+  "name": "QR Capture Open",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": ["manual", "camera", "http"],
+  "permissions": {
+    "notification_send": false,
+    "network_request": {
+      "domains": ["example.com"],
+      "max_calls": 1
+    },
+    "file_access": {
+      "roots": ["sandbox://captures"],
+      "ops": ["write", "read"]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": {
+      "mode": "user_initiated_only"
+    },
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Sensitive",
+  "user_initiated_required": true,
+  "signature": null,
+  "publisher": null
+}

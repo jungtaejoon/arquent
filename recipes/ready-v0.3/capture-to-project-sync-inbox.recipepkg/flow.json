@@ -1,0 +1,25 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.manual",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "camera.capture",
+      "params": {
+        "mode": "photo",
+        "output_uri": "sandbox://captures/project_{{metadata.run_id}}.jpg"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "file.move",
+      "params": {
+        "uri": "{{state.capture_uri}}",
+        "destination": "sandbox://sync/project_inbox"
+      }
+    }
+  ]
+}

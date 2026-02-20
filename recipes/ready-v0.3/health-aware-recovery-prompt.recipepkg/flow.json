@@ -1,0 +1,25 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.manual",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "health.read",
+      "params": {
+        "types": ["sleep_summary", "steps_daily"],
+        "aggregation": "daily_summary"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "notification.send",
+      "params": {
+        "title": "Recovery Recommendation",
+        "body": "Sleep {{state.sleep_hours}}h · Steps {{state.steps}}. Recommend light recovery today."
+      }
+    }
+  ]
+}

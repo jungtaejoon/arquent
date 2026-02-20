@@ -1,0 +1,27 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.widget_tap",
+    "params": {
+      "widget_id": "quick_photo_memo"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "camera.capture",
+      "params": {
+        "mode": "photo",
+        "output_uri": "sandbox://captures/photo_memo_{{metadata.run_id}}.jpg"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "file.write",
+      "params": {
+        "uri": "sandbox://notes/photo_memo_{{metadata.run_id}}.txt",
+        "content": "{{input.memo_text}}"
+      }
+    }
+  ]
+}

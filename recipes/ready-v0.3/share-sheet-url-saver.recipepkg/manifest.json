@@ -1,0 +1,35 @@
+{
+  "id": "share-sheet-url-saver",
+  "name": "Share Sheet URL Saver",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "manual",
+    "kv"
+  ],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": {
+      "roots": [
+        "sandbox://notes"
+      ],
+      "ops": [
+        "write",
+        "read"
+      ]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": "jiDcGejYtKsbnzspgFKw3MUqt+9ea71z6xrJQKNCCOJWu/DYN3fIXHL7yjUwBfz4D8O0B1Xo6a3EVYm3xcCgAQ==",
+  "publisher": null
+}

@@ -1,0 +1,71 @@
+import crypto from 'node:crypto';
+
+import nacl from 'tweetnacl';
+import { describe, expect, test } from 'vitest';
+
+import { buildServer } from '../src/server.js';
+
+describe('cloud api', () => {
+  test('rejects publish with invalid signature', async () => {
+    const app = buildServer();
+    const response = await app.inject({
+      method: 'POST',
+      url: '/marketplace/publish',
+      payload: {
+        id: 'pkg1',
+        manifest: 'm',
+        flow: 'f',
+        signature: 'invalid',
+        publicKey: 'invalid',
+      },
+    });
+
+    expect(response.statusCode).toBe(400);
+    await app.close();
+  });
+
+  test('accepts publish with valid signature', async () => {
+    const app = buildServer();
+
+    const keyPair = nacl.sign.keyPair();
+    const manifest = 'manifest-content';
+    const flow = 'flow-content';
+    const digestHex = crypto.createHash('sha256').update(manifest + flow).digest('hex');
+    const signature = nacl.sign.detached(Buffer.from(digestHex, 'utf8'), keyPair.secretKey);
+
+    const response = await app.inject({
+      method: 'POST',
+      url: '/marketplace/publish',
+      payload: {
+        id: 'pkg-valid',
+        manifest,
+        flow,
+        signature: Buffer.from(signature).toString('base64'),
+        publicKey: Buffer.from(keyPair.publicKey).toString('base64'),
+      },
+    });
+
+    expect(response.statusCode).toBe(200);
+    await app.close();
+  });
+
+  test('webhook endpoint rate-limits excessive requests', async () => {
+    const app = buildServer();
+
+    let tooManyRequestsSeen = false;
+    for (let index = 0; index < 15; index += 1) {
+      const response = await app.inject({
+        method: 'POST',
+        url: '/webhook/test-hook',
+        payload: { sequence: index },
+      });
+      if (response.statusCode === 429) {
+        tooManyRequestsSeen = true;
+        break;
+      }
+    }
+
+    expect(tooManyRequestsSeen).toBe(true);
+    await app.close();
+  });
+});

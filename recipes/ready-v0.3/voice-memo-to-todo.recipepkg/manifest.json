@@ -1,0 +1,30 @@
+{
+  "id": "voice-memo-to-todo",
+  "name": "Voice Memo to TODO",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": ["manual", "microphone", "file"],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": {
+      "roots": ["sandbox://notes"],
+      "ops": ["write", "read"]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": {
+      "max_seconds": 60,
+      "user_initiated_only": true
+    },
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Sensitive",
+  "user_initiated_required": true,
+  "signature": null,
+  "publisher": null
+}

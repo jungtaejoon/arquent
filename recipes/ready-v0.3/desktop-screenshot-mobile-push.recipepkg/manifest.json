@@ -1,0 +1,39 @@
+{
+  "id": "desktop-screenshot-mobile-push",
+  "name": "Desktop Screenshot to Mobile Push",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "file",
+    "http"
+  ],
+  "permissions": {
+    "notification_send": false,
+    "network_request": {
+      "domains": [
+        "localhost"
+      ],
+      "max_calls": 3
+    },
+    "file_access": {
+      "roots": [
+        "sandbox://desktop/screenshots"
+      ],
+      "ops": [
+        "read"
+      ]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": "snlyVWmQFNgMJy1NEJDYqheeqbsqrKjCQGCc6SGsIU4vte46X4Tmb4tlLoyLPjRqajeyHPs0o6Zbryc7RpgWCg==",
+  "publisher": null
+}

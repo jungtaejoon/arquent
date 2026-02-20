@@ -1,0 +1,39 @@
+{
+  "id": "mobile-widget-photo-memo",
+  "name": "Widget Tap Photo Memo",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "manual",
+    "camera",
+    "kv"
+  ],
+  "permissions": {
+    "notification_send": false,
+    "network_request": null,
+    "file_access": {
+      "roots": [
+        "sandbox://captures",
+        "sandbox://notes"
+      ],
+      "ops": [
+        "write",
+        "read"
+      ]
+    },
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": {
+      "mode": "user_initiated_only"
+    },
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Sensitive",
+  "user_initiated_required": true,
+  "signature": "C6GwwJ8xM+/ZAkoh+b6aBJZdCoLyz+CgSwtkBcZzX2eplCAsvNn/wRhsH6Gr1tB3kXWOkmlyMJ+ko+FIseDQAA==",
+  "publisher": null
+}

@@ -1,0 +1,27 @@
+{
+  "id": "pre-meeting-focus-notification",
+  "name": "Pre-Meeting Focus Notification",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "time",
+    "notification"
+  ],
+  "permissions": {
+    "notification_send": true,
+    "network_request": null,
+    "file_access": null,
+    "clipboard_read": false,
+    "clipboard_write": false,
+    "hotkey_register": false,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": "maNethQMn+nRyPh4Rr813o5a5G1COGCWXoKCkuQtc5hN3Oji8i0xRHp+0mj2HIEJ22ZDPppRIMpM29wXLQjCAg==",
+  "publisher": null
+}

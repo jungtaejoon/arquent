@@ -1,0 +1,19 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.hotkey",
+    "params": {
+      "binding": "cmd+shift+w"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "http.request",
+      "params": {
+        "method": "GET",
+        "url": "http://localhost:4000/webhook/work-mode"
+      }
+    }
+  ]
+}

@@ -1,0 +1,30 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.manual",
+    "params": {}
+  },
+  "condition": {
+    "op": "Exists",
+    "args": {
+      "key": "steps"
+    }
+  },
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "health.read",
+      "params": {
+        "types": ["steps_daily"],
+        "aggregation": "daily_summary"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "notification.send",
+      "params": {
+        "title": "Goal Check",
+        "body": "Great work today. Steps: {{state.steps}}"
+      }
+    }
+  ]
+}

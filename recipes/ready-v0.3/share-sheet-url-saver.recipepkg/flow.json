@@ -1,0 +1,17 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.share_sheet",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "file.write",
+      "params": {
+        "uri": "sandbox://notes/reading_list.txt",
+        "content": "{{input.shared_url}} #{{input.tag}}"
+      }
+    }
+  ]
+}

@@ -1,0 +1,27 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.file_watcher",
+    "params": {
+      "path": "sandbox://desktop/screenshots"
+    }
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "file.rename",
+      "params": {
+        "uri": "{{input.file_uri}}",
+        "new_name": "screenshot_{{metadata.started_at}}.png"
+      }
+    },
+    {
+      "id": "a2",
+      "action_type": "file.move",
+      "params": {
+        "uri": "{{state.renamed_uri}}",
+        "destination": "sandbox://projects/assets"
+      }
+    }
+  ]
+}
