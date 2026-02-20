@@ -98,6 +98,8 @@ class AppStore extends ChangeNotifier {
   final Map<String, CloudRecipePackage> installed = {};
   final Map<String, Set<String>> _installedRecipeTags = {};
   final Map<String, String> _recipeSharedUrls = {};
+  final Map<String, Map<String, dynamic>> _lastRunInputsByRecipe = {};
+  final Map<String, Map<String, dynamic>> _lastRunArtifactsByRecipe = {};
   final List<ExecutionLogEntry> logs = [];
   Map<String, dynamic> lastArtifacts = const {};
   String workspaceScope = 'personal';
@@ -460,14 +462,16 @@ class AppStore extends ChangeNotifier {
 
     RuntimeExecutionResult result;
     try {
+      final runtimeInputs = {
+        'shared_url': selectedUrl.isEmpty ? recipeSharedUrl(recipeId) : selectedUrl,
+      };
       result = await runtime.execute(
         recipeId: recipeId,
         manifest: manifest,
         flow: flow,
-        runtimeInputs: {
-          'shared_url': selectedUrl.isEmpty ? recipeSharedUrl(recipeId) : selectedUrl,
-        },
+        runtimeInputs: runtimeInputs,
       );
+      _lastRunInputsByRecipe[recipeId] = Map<String, dynamic>.from(runtimeInputs);
     } catch (error) {
       result = RuntimeExecutionResult(
         success: false,
@@ -491,6 +495,7 @@ class AppStore extends ChangeNotifier {
       ),
     );
     lastArtifacts = result.artifacts;
+    _lastRunArtifactsByRecipe[recipeId] = Map<String, dynamic>.from(result.artifacts);
 
     status = result.success
       ? 'Executed $recipeId: ${result.message}'
@@ -605,6 +610,22 @@ class AppStore extends ChangeNotifier {
         .where((entry) => entry.value.tags.contains(tag))
         .map((entry) => entry.key)
         .toList(growable: false);
+  }
+
+  List<ExecutionLogEntry> logsForRecipe(String recipeId) {
+    return logs.where((entry) => entry.recipeId == recipeId).toList(growable: false);
+  }
+
+  Map<String, dynamic> lastRunInputsForRecipe(String recipeId) {
+    return Map<String, dynamic>.from(_lastRunInputsByRecipe[recipeId] ?? const {});
+  }
+
+  Map<String, dynamic> lastRunArtifactsForRecipe(String recipeId) {
+    return Map<String, dynamic>.from(_lastRunArtifactsByRecipe[recipeId] ?? const {});
+  }
+
+  int runCountForRecipe(String recipeId) {
+    return logs.where((entry) => entry.recipeId == recipeId).length;
   }
 
   void _touchActiveDraft() {

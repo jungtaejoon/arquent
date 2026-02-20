@@ -25,6 +25,7 @@ class AppScaffoldShell extends StatelessWidget {
               title: Text('Use Recipes'),
             ),
             _item(context, 'Dashboard', AppRoutes.dashboard),
+            _item(context, 'Recipe State', AppRoutes.recipeState),
             _item(context, 'Execution Logs', AppRoutes.executionLogs),
             _item(context, 'Scenario Lab', AppRoutes.scenarioLab),
             const Divider(height: 12),

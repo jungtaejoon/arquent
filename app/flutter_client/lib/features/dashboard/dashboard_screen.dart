@@ -66,6 +66,10 @@ class DashboardScreen extends StatelessWidget {
                             child: const Text('Go to Builder'),
                           ),
                           OutlinedButton(
+                            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.recipeState),
+                            child: const Text('Go to Recipe State'),
+                          ),
+                          OutlinedButton(
                             onPressed: () => Navigator.of(context).pushNamed(AppRoutes.marketplace),
                             child: const Text('Go to Marketplace'),
                           ),
