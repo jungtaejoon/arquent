@@ -29,6 +29,8 @@ class ActionSetupScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Text('Active draft: ${store.activeDraftKey}'),
+              const SizedBox(height: 8),
               const Text('Select one or more actions'),
               const SizedBox(height: 8),
               ..._actionOptions.map((option) {

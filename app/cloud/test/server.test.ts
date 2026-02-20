@@ -68,4 +68,28 @@ describe('cloud api', () => {
     expect(tooManyRequestsSeen).toBe(true);
     await app.close();
   });
+
+  test('accepts publish-local and exposes package in recipe list', async () => {
+    const app = buildServer();
+
+    const publishResponse = await app.inject({
+      method: 'POST',
+      url: '/marketplace/publish-local',
+      payload: {
+        id: 'local-shared-recipe',
+        manifest: '{"id":"local-shared-recipe"}',
+        flow: '{"trigger":{"trigger_type":"trigger.manual"},"actions":[]}',
+      },
+    });
+    expect(publishResponse.statusCode).toBe(200);
+
+    const listResponse = await app.inject({
+      method: 'GET',
+      url: '/marketplace/recipes',
+    });
+    expect(listResponse.statusCode).toBe(200);
+    expect(listResponse.json().recipes.some((item: { id: string }) => item.id === 'local-shared-recipe')).toBe(true);
+
+    await app.close();
+  });
 });

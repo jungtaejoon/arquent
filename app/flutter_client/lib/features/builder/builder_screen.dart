@@ -14,16 +14,23 @@ class BuilderScreen extends StatefulWidget {
 
 class _BuilderScreenState extends State<BuilderScreen> {
   late final TextEditingController _idController;
+  late final TextEditingController _draftNameController;
+  late final TextEditingController _tagController;
+  String? _selectedTagFilter;
 
   @override
   void initState() {
     super.initState();
     _idController = TextEditingController(text: AppStore.instance.draftRecipeId);
+    _draftNameController = TextEditingController(text: AppStore.instance.activeDraftName);
+    _tagController = TextEditingController();
   }
 
   @override
   void dispose() {
     _idController.dispose();
+    _draftNameController.dispose();
+    _tagController.dispose();
     super.dispose();
   }
 
@@ -35,19 +42,169 @@ class _BuilderScreenState extends State<BuilderScreen> {
       body: AnimatedBuilder(
         animation: store,
         builder: (context, _) {
+          if (_idController.text != store.draftRecipeId) {
+            _idController.value = TextEditingValue(
+              text: store.draftRecipeId,
+              selection: TextSelection.collapsed(offset: store.draftRecipeId.length),
+            );
+          }
+          if (_draftNameController.text != store.activeDraftName) {
+            _draftNameController.value = TextEditingValue(
+              text: store.activeDraftName,
+              selection: TextSelection.collapsed(offset: store.activeDraftName.length),
+            );
+          }
+
           final manifestPreview = const JsonEncoder.withIndent('  ').convert(
             store.buildDraftManifest(),
           );
           final flowPreview = const JsonEncoder.withIndent('  ').convert(
             store.buildDraftFlow(),
           );
+          final updated = store.activeDraftUpdatedAt.toLocal().toIso8601String().replaceFirst('T', ' ');
+          final availableTags = store.allDraftTags.toList()..sort();
+          final filteredDraftKeys = _selectedTagFilter == null
+              ? store.draftKeys
+              : store.draftKeysByTag(_selectedTagFilter!);
+          final activeDraftVisible = filteredDraftKeys.contains(store.activeDraftKey);
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const Text('Draft Workspace'),
+              const SizedBox(height: 8),
+              if (availableTags.isNotEmpty) ...[
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: [
+                    FilterChip(
+                      label: const Text('All'),
+                      selected: _selectedTagFilter == null,
+                      onSelected: (_) {
+                        setState(() {
+                          _selectedTagFilter = null;
+                        });
+                      },
+                    ),
+                    ...availableTags.map(
+                      (tag) => FilterChip(
+                        label: Text('#$tag'),
+                        selected: _selectedTagFilter == tag,
+                        onSelected: (_) {
+                          setState(() {
+                            _selectedTagFilter = tag;
+                          });
+                        },
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 8),
+              ],
+              DropdownButtonFormField<String>(
+                value: activeDraftVisible ? store.activeDraftKey : null,
+                decoration: const InputDecoration(
+                  labelText: 'Active Draft',
+                  border: OutlineInputBorder(),
+                ),
+                items: filteredDraftKeys
+                    .map((key) => DropdownMenuItem(value: key, child: Text(store.draftLabel(key))))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    store.switchActiveDraft(value);
+                  }
+                },
+              ),
+              if (!activeDraftVisible && filteredDraftKeys.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text('Current active draft is outside this tag filter.'),
+                ),
+              if (filteredDraftKeys.isEmpty)
+                Padding(
+                  padding: const EdgeInsets.only(top: 8),
+                  child: Text('No drafts found for selected tag filter.'),
+                ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _draftNameController,
+                onChanged: store.renameActiveDraft,
+                decoration: const InputDecoration(
+                  labelText: 'Draft Name',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              Text('Last edited: $updated'),
+              const SizedBox(height: 8),
+              Row(
+                children: [
+                  Expanded(
+                    child: TextField(
+                      controller: _tagController,
+                      decoration: const InputDecoration(
+                        labelText: 'Add tag',
+                        border: OutlineInputBorder(),
+                        hintText: 'e.g. finance, morning',
+                      ),
+                      onSubmitted: (value) {
+                        store.addActiveDraftTag(value);
+                        _tagController.clear();
+                      },
+                    ),
+                  ),
+                  const SizedBox(width: 8),
+                  FilledButton(
+                    onPressed: () {
+                      store.addActiveDraftTag(_tagController.text);
+                      _tagController.clear();
+                    },
+                    child: const Text('Add'),
+                  ),
+                ],
+              ),
+              const SizedBox(height: 8),
+              if (store.activeDraftTags.isEmpty)
+                const Text('No tags yet')
+              else
+                Wrap(
+                  spacing: 8,
+                  runSpacing: 8,
+                  children: store.activeDraftTags
+                      .map(
+                        (tag) => InputChip(
+                          label: Text(tag),
+                          onDeleted: () => store.removeActiveDraftTag(tag),
+                        ),
+                      )
+                      .toList(),
+                ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => store.createNewDraft(),
+                    child: const Text('New Draft'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => store.createNewDraft(duplicateCurrent: true),
+                    child: const Text('Duplicate Draft'),
+                  ),
+                  OutlinedButton(
+                    onPressed: store.draftKeys.length > 1 ? store.deleteActiveDraft : null,
+                    child: const Text('Delete Draft'),
+                  ),
+                ],
+              ),
+              const Divider(height: 24),
               const Text('Recipe ID'),
               const SizedBox(height: 8),
               TextField(
                 controller: _idController,
+                onChanged: store.updateDraftRecipeId,
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                   hintText: 'local.custom.recipe',
@@ -86,6 +243,15 @@ class _BuilderScreenState extends State<BuilderScreen> {
                   store.createDraftRecipe();
                 },
                 child: const Text('Build & Install Locally'),
+              ),
+              const SizedBox(height: 8),
+              OutlinedButton(
+                onPressed: () async {
+                  store.updateDraftRecipeId(_idController.text);
+                  store.createDraftRecipe();
+                  await store.publishInstalledRecipe(store.draftRecipeId);
+                },
+                child: const Text('Build & Share to Marketplace'),
               ),
               const SizedBox(height: 8),
               Text('Status: ${store.status}'),

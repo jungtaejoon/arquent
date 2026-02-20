@@ -152,6 +152,42 @@ export function buildServer() {
     return reply.send({ ok: true, id });
   });
 
+  const publishLocalSchema = z.object({
+    id: z.string().min(1),
+    manifest: z.string().min(1),
+    flow: z.string().min(1),
+  });
+
+  app.post('/marketplace/publish-local', async (request, reply) => {
+    const parsed = publishLocalSchema.safeParse(request.body);
+    if (!parsed.success) {
+      return reply.code(400).send({ error: 'invalid_publish_local_payload' });
+    }
+
+    const digestHex = crypto
+      .createHash('sha256')
+      .update(parsed.data.manifest + parsed.data.flow)
+      .digest('hex');
+
+    const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
+    const signature = crypto.sign(null, Buffer.from(digestHex, 'utf8'), privateKey);
+
+    const publicDer = publicKey.export({ format: 'der', type: 'spki' });
+    const publicKeyBase64 = Buffer.from(publicDer).subarray(-32).toString('base64');
+    const signatureBase64 = signature.toString('base64');
+
+    putPackage({
+      id: parsed.data.id,
+      manifest: parsed.data.manifest,
+      flow: parsed.data.flow,
+      signature: signatureBase64,
+      publicKey: publicKeyBase64,
+      createdAt: new Date().toISOString(),
+    });
+
+    return reply.send({ ok: true, id: parsed.data.id });
+  });
+
   app.get('/marketplace/package/:id', async (request, reply) => {
     const params = request.params as { id: string };
     const pkg = getPackage(params.id);

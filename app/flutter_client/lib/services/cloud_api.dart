@@ -52,6 +52,26 @@ class CloudApi {
     }
   }
 
+  Future<void> publishLocalRecipe({
+    required String id,
+    required String manifest,
+    required String flow,
+  }) async {
+    final response = await _client.post(
+      Uri.parse('$baseUrl/marketplace/publish-local'),
+      headers: {'content-type': 'application/json'},
+      body: jsonEncode({
+        'id': id,
+        'manifest': manifest,
+        'flow': flow,
+      }),
+    );
+
+    if (response.statusCode >= 400) {
+      throw Exception('publish local failed: ${response.body}');
+    }
+  }
+
   Future<List<CloudRecipeSummary>> fetchMarketplaceRecipes() async {
     final response = await _client.get(Uri.parse('$baseUrl/marketplace/recipes'));
     if (response.statusCode >= 400) {

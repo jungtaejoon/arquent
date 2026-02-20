@@ -6,8 +6,16 @@ import '../../domain/recipe_models.dart';
 import '../../state/app_store.dart';
 import '../../widgets/risk_badge.dart';
 
-class MarketplaceScreen extends StatelessWidget {
+class MarketplaceScreen extends StatefulWidget {
   const MarketplaceScreen({super.key});
+
+  @override
+  State<MarketplaceScreen> createState() => _MarketplaceScreenState();
+}
+
+class _MarketplaceScreenState extends State<MarketplaceScreen> {
+  String? _selectedLocalRecipe;
+  String? _selectedTagFilter;
 
   @override
   Widget build(BuildContext context) {
@@ -17,6 +25,20 @@ class MarketplaceScreen extends StatelessWidget {
       body: AnimatedBuilder(
         animation: store,
         builder: (context, _) {
+          final allInstalledIds = store.installed.keys.toList()..sort();
+          final availableTags = store.allInstalledRecipeTags.toList()..sort();
+          final installedIds = _selectedTagFilter == null
+              ? allInstalledIds
+              : (store.installedRecipeIdsByTag(_selectedTagFilter!)..sort());
+
+          if (installedIds.isNotEmpty &&
+              (_selectedLocalRecipe == null || !installedIds.contains(_selectedLocalRecipe))) {
+            _selectedLocalRecipe = installedIds.first;
+          }
+          if (installedIds.isEmpty) {
+            _selectedLocalRecipe = null;
+          }
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -34,6 +56,84 @@ class MarketplaceScreen extends StatelessWidget {
                     child: const Text('Refresh'),
                   ),
                 ],
+              ),
+              const SizedBox(height: 12),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Share local recipe to marketplace'),
+                      const SizedBox(height: 8),
+                      if (availableTags.isNotEmpty) ...[
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: [
+                            FilterChip(
+                              label: const Text('All'),
+                              selected: _selectedTagFilter == null,
+                              onSelected: (_) {
+                                setState(() {
+                                  _selectedTagFilter = null;
+                                });
+                              },
+                            ),
+                            ...availableTags.map(
+                              (tag) => FilterChip(
+                                label: Text('#$tag'),
+                                selected: _selectedTagFilter == tag,
+                                onSelected: (_) {
+                                  setState(() {
+                                    _selectedTagFilter = tag;
+                                  });
+                                },
+                              ),
+                            ),
+                          ],
+                        ),
+                        const SizedBox(height: 8),
+                      ],
+                      DropdownButtonFormField<String>(
+                        value: _selectedLocalRecipe,
+                        decoration: const InputDecoration(
+                          border: OutlineInputBorder(),
+                          labelText: 'Installed recipe',
+                        ),
+                        items: installedIds
+                            .map((id) => DropdownMenuItem(value: id, child: Text(id)))
+                            .toList(),
+                        onChanged: installedIds.isEmpty
+                            ? null
+                            : (value) {
+                                setState(() {
+                                  _selectedLocalRecipe = value;
+                                });
+                              },
+                      ),
+                      const SizedBox(height: 8),
+                      if (_selectedLocalRecipe != null)
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
+                          children: store
+                              .installedRecipeTags(_selectedLocalRecipe!)
+                              .map((tag) => Chip(label: Text('#$tag')))
+                              .toList(),
+                        ),
+                      if (_selectedTagFilter != null && installedIds.isEmpty)
+                        const Text('No installed recipes match selected tag.'),
+                      const SizedBox(height: 8),
+                      FilledButton(
+                        onPressed: store.isBusy || _selectedLocalRecipe == null
+                            ? null
+                            : () => store.publishInstalledRecipe(_selectedLocalRecipe!),
+                        child: const Text('Share to Marketplace'),
+                      ),
+                    ],
+                  ),
+                ),
               ),
               const SizedBox(height: 8),
               Text('Status: ${store.status}'),

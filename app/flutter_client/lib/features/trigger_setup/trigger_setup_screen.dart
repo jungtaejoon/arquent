@@ -27,6 +27,8 @@ class TriggerSetupScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              Text('Active draft: ${store.activeDraftKey}'),
+              const SizedBox(height: 8),
               const Text('Choose one trigger for the draft recipe'),
               const SizedBox(height: 8),
               ..._triggerOptions.map((option) {
