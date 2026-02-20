@@ -17,10 +17,13 @@ class RecipeDraft {
     required this.recipeId,
     required this.riskLevel,
     required this.triggerType,
+    required Set<String> triggerTypes,
+    required this.triggerMode,
     required Set<String> actions,
     required Set<String> tags,
     required Map<String, Map<String, dynamic>> actionParams,
   })  : actions = Set<String>.from(actions),
+        triggerTypes = Set<String>.from(triggerTypes),
         tags = Set<String>.from(tags),
       usageSteps = List<String>.from(usageSteps),
         actionParams = actionParams.map(
@@ -34,6 +37,8 @@ class RecipeDraft {
   String recipeId;
   String riskLevel;
   String triggerType;
+  final Set<String> triggerTypes;
+  String triggerMode;
   final Set<String> actions;
   final Set<String> tags;
   final Map<String, Map<String, dynamic>> actionParams;
@@ -47,6 +52,8 @@ class RecipeDraft {
       recipeId: recipeId,
       riskLevel: riskLevel,
       triggerType: triggerType,
+      triggerTypes: triggerTypes,
+      triggerMode: triggerMode,
       actions: actions,
       tags: tags,
       actionParams: actionParams,
@@ -66,6 +73,8 @@ class RecipeDraft {
       recipeId: 'local.custom.recipe',
       riskLevel: 'Standard',
       triggerType: 'trigger.manual',
+      triggerTypes: {'trigger.manual'},
+      triggerMode: 'any',
       actions: {'notification.send'},
       tags: {},
       actionParams: {
@@ -132,6 +141,8 @@ class AppStore extends ChangeNotifier {
   String get draftUsageText => _activeDraft.usageSteps.join('\n');
   String get draftRiskLevel => _activeDraft.riskLevel;
   String get draftTriggerType => _activeDraft.triggerType;
+  Set<String> get draftTriggerTypes => _activeDraft.triggerTypes;
+  String get draftTriggerMode => _activeDraft.triggerMode;
   Set<String> get draftActions => _activeDraft.actions;
   Map<String, Map<String, dynamic>> get draftActionParams => _activeDraft.actionParams;
   List<RecipeTemplateDefinition> get availableTemplates => recipeTemplates;
@@ -244,6 +255,35 @@ class AppStore extends ChangeNotifier {
 
   void updateDraftTrigger(String value) {
     _activeDraft.triggerType = value;
+    _activeDraft.triggerTypes
+      ..clear()
+      ..add(value);
+    _activeDraft.triggerMode = 'any';
+    _touchActiveDraft();
+    notifyListeners();
+  }
+
+  void toggleDraftTriggerSelection(String triggerType) {
+    final draft = _activeDraft;
+    if (draft.triggerTypes.contains(triggerType)) {
+      draft.triggerTypes.remove(triggerType);
+    } else {
+      draft.triggerTypes.add(triggerType);
+    }
+    if (draft.triggerTypes.isEmpty) {
+      draft.triggerTypes.add('trigger.manual');
+    }
+    draft.triggerType = draft.triggerTypes.first;
+    _touchActiveDraft();
+    notifyListeners();
+  }
+
+  void setDraftTriggerMode(String mode) {
+    final normalized = mode.trim().toLowerCase();
+    if (normalized != 'any' && normalized != 'all' && normalized != 'sequence') {
+      return;
+    }
+    _activeDraft.triggerMode = normalized;
     _touchActiveDraft();
     notifyListeners();
   }
@@ -263,6 +303,10 @@ class AppStore extends ChangeNotifier {
       ..addAll(template.usageSteps);
     _activeDraft.riskLevel = template.riskLevel;
     _activeDraft.triggerType = template.triggerType;
+    _activeDraft.triggerTypes
+      ..clear()
+      ..add(template.triggerType);
+    _activeDraft.triggerMode = 'any';
     _activeDraft.actions
       ..clear()
       ..addAll(template.actions);
@@ -306,6 +350,8 @@ class AppStore extends ChangeNotifier {
             recipeId: 'local.custom.recipe',
             riskLevel: 'Standard',
             triggerType: 'trigger.manual',
+            triggerTypes: {'trigger.manual'},
+            triggerMode: 'any',
             actions: {'notification.send'},
             tags: {},
             actionParams: {
@@ -457,8 +503,11 @@ class AppStore extends ChangeNotifier {
   }
 
   Map<String, dynamic> buildDraftFlow() {
+    final triggers = _activeDraft.triggerTypes.toList()..sort();
     return {
       'trigger': {'trigger_type': _activeDraft.triggerType},
+      'triggers': triggers,
+      'trigger_mode': _activeDraft.triggerMode,
       'actions': _buildActions(_activeDraft.actions.toList()),
     };
   }
@@ -490,13 +539,33 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<RuntimeExecutionResult?> runRecipe(String recipeId, {String? sharedUrl}) async {
+  Future<RuntimeExecutionResult?> runRecipe(
+    String recipeId, {
+    String? sharedUrl,
+    List<String>? firedTriggers,
+    String? previousRecipeId,
+    Set<String>? visitedRecipeIds,
+  }) async {
     final package = installed[recipeId];
     if (package == null) {
       status = 'Recipe not installed';
       notifyListeners();
       return null;
     }
+
+    final visited = visitedRecipeIds ?? <String>{};
+    if (visited.contains(recipeId)) {
+      status = 'Run blocked: chain loop detected at $recipeId';
+      notifyListeners();
+      return RuntimeExecutionResult(
+        success: false,
+        sensitiveUsed: false,
+        executedActions: 0,
+        message: 'Blocked chain loop at $recipeId',
+        artifacts: const {},
+      );
+    }
+    visited.add(recipeId);
 
     final manifest = package.manifestJson;
     final flow = package.flowJson;
@@ -506,8 +575,13 @@ class AppStore extends ChangeNotifier {
 
     RuntimeExecutionResult result;
     try {
+      final triggerInputs = firedTriggers == null || firedTriggers.isEmpty
+          ? ['trigger.manual']
+          : firedTriggers;
       final runtimeInputs = {
         'shared_url': selectedUrl.isEmpty ? recipeSharedUrl(recipeId) : selectedUrl,
+        'fired_triggers': triggerInputs,
+        if (previousRecipeId != null) 'previous_recipe_id': previousRecipeId,
       };
       result = await runtime.execute(
         recipeId: recipeId,
@@ -544,8 +618,50 @@ class AppStore extends ChangeNotifier {
     status = result.success
       ? 'Executed $recipeId: ${result.message}'
       : 'Run failed: ${result.message}';
+
+    if (result.success) {
+      await _runChainedRecipes(
+        sourceRecipeId: recipeId,
+        sourceFlow: flow,
+        sharedUrl: selectedUrl,
+        visitedRecipeIds: visited,
+      );
+    }
+
     notifyListeners();
     return result;
+  }
+
+  Future<void> _runChainedRecipes({
+    required String sourceRecipeId,
+    required Map<String, dynamic> sourceFlow,
+    required String sharedUrl,
+    required Set<String> visitedRecipeIds,
+  }) async {
+    final actions = (sourceFlow['actions'] as List<dynamic>? ?? []).whereType<Map<String, dynamic>>();
+    for (final action in actions) {
+      final actionType = (action['action_type'] ?? '').toString();
+      if (actionType != 'recipe.run') {
+        continue;
+      }
+      final params = action['params'] as Map<String, dynamic>? ?? const {};
+      final targetRecipeId = (params['recipe_id'] ?? '').toString().trim();
+      final when = (params['when'] ?? 'on_success').toString();
+      if (targetRecipeId.isEmpty || (when != 'on_success' && when != 'always')) {
+        continue;
+      }
+      if (!installed.containsKey(targetRecipeId)) {
+        status = 'Chain skipped: target recipe not installed ($targetRecipeId)';
+        continue;
+      }
+      await runRecipe(
+        targetRecipeId,
+        sharedUrl: sharedUrl,
+        firedTriggers: const ['trigger.recipe_completed'],
+        previousRecipeId: sourceRecipeId,
+        visitedRecipeIds: visitedRecipeIds,
+      );
+    }
   }
 
   Future<void> _withBusy(Future<void> Function() task) async {

@@ -49,15 +49,34 @@ class LocalRuntime {
     required Map<String, dynamic> flow,
     Map<String, dynamic> runtimeInputs = const {},
   }) async {
-    final trigger = flow['trigger'] as Map<String, dynamic>? ?? {};
-    final triggerType = (trigger['trigger_type'] as String? ?? 'trigger.manual').trim();
+    final triggerTypes = _extractTriggerTypes(flow);
+    final triggerMode = (flow['trigger_mode'] as String? ?? 'any').trim().toLowerCase();
+    final firedTriggers = (runtimeInputs['fired_triggers'] as List<dynamic>? ?? ['trigger.manual'])
+        .map((item) => item.toString())
+        .where((item) => item.trim().isNotEmpty)
+        .toSet();
     final actions = (flow['actions'] as List<dynamic>? ?? [])
         .whereType<Map<String, dynamic>>()
         .toList();
 
+    if (!_isTriggered(triggerTypes: triggerTypes, triggerMode: triggerMode, firedTriggers: firedTriggers)) {
+      return RuntimeExecutionResult(
+        success: true,
+        sensitiveUsed: false,
+        executedActions: 0,
+        message: 'Skipped: triggers not satisfied',
+        artifacts: {
+          'state': <String, dynamic>{},
+          'required_triggers': triggerTypes.toList(growable: false),
+          'trigger_mode': triggerMode,
+          'fired_triggers': firedTriggers.toList(growable: false),
+        },
+      );
+    }
+
     final riskLevel = manifest['risk_level'] as String? ?? 'Standard';
     final userInitiatedRequired = manifest['user_initiated_required'] as bool? ?? false;
-    final triggerUserInitiated = _isUserInitiatedTrigger(triggerType);
+    final triggerUserInitiated = firedTriggers.any(_isUserInitiatedTrigger);
     final sensitiveUsed = actions.any((a) => _sensitiveActions.contains(a['action_type']));
 
     if (sensitiveUsed && riskLevel != 'Sensitive') {
@@ -144,6 +163,37 @@ class LocalRuntime {
         triggerType == 'trigger.widget_tap' ||
         triggerType == 'trigger.hotkey' ||
         triggerType == 'trigger.share_sheet';
+  }
+
+  Set<String> _extractTriggerTypes(Map<String, dynamic> flow) {
+    final raw = flow['triggers'];
+    if (raw is List) {
+      final parsed = raw
+          .map((item) => item.toString().trim())
+          .where((item) => item.isNotEmpty)
+          .toSet();
+      if (parsed.isNotEmpty) {
+        return parsed;
+      }
+    }
+
+    final trigger = flow['trigger'] as Map<String, dynamic>? ?? {};
+    final triggerType = (trigger['trigger_type'] as String? ?? 'trigger.manual').trim();
+    return {triggerType};
+  }
+
+  bool _isTriggered({
+    required Set<String> triggerTypes,
+    required String triggerMode,
+    required Set<String> firedTriggers,
+  }) {
+    if (triggerTypes.isEmpty) {
+      return true;
+    }
+    if (triggerMode == 'all' || triggerMode == 'sequence') {
+      return triggerTypes.every(firedTriggers.contains);
+    }
+    return triggerTypes.any(firedTriggers.contains);
   }
 
   bool _evaluateCondition(dynamic condition, Map<String, dynamic> state) {
@@ -349,6 +399,10 @@ class LocalRuntime {
           throw Exception('Blocked command: $command');
         }
         state['command_output'] = 'Already up to date.';
+        break;
+      case 'recipe.run':
+        state['chain_recipe_id'] = params['recipe_id']?.toString() ?? '';
+        state['chain_when'] = params['when']?.toString() ?? 'on_success';
         break;
       default:
         throw Exception('Unsupported action type: $actionType');
