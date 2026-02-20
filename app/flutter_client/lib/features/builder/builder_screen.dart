@@ -338,23 +338,35 @@ class _BuilderScreenState extends State<BuilderScreen> {
               const Text('Trigger'),
               const SizedBox(height: 8),
               DropdownButtonFormField<String>(
-                value: store.draftTriggerType,
+                value: store.draftTriggerMode,
                 decoration: const InputDecoration(
+                  labelText: 'Trigger Mode',
                   border: OutlineInputBorder(),
                 ),
-                items: triggerCatalog
-                    .map(
-                      (trigger) => DropdownMenuItem(
-                        value: trigger.type,
-                        child: Text('${trigger.label} · ${trigger.type}'),
-                      ),
-                    )
-                    .toList(),
+                items: const [
+                  DropdownMenuItem(value: 'any', child: Text('Any (parallel OR)')),
+                  DropdownMenuItem(value: 'all', child: Text('All (parallel AND)')),
+                  DropdownMenuItem(value: 'sequence', child: Text('Sequence (ordered chain)')),
+                ],
                 onChanged: (value) {
                   if (value != null) {
-                    store.updateDraftTrigger(value);
+                    store.setDraftTriggerMode(value);
                   }
                 },
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: triggerCatalog
+                    .map(
+                      (trigger) => FilterChip(
+                        label: Text('${trigger.label} (${trigger.type})'),
+                        selected: store.draftTriggerTypes.contains(trigger.type),
+                        onSelected: (_) => store.toggleDraftTriggerSelection(trigger.type),
+                      ),
+                    )
+                    .toList(growable: false),
               ),
               const SizedBox(height: 12),
               const Text('Actions'),
@@ -458,7 +470,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
                 child: ListTile(
                   title: const Text('Current Draft Summary'),
                   subtitle: Text(
-                    'Trigger: ${store.draftTriggerType}\nActions: ${store.draftActions.join(', ')}\nWorkspace: ${store.workspaceScope}',
+                    'Triggers (${store.draftTriggerMode}): ${store.draftTriggerTypes.join(', ')}\nActions: ${store.draftActions.join(', ')}\nWorkspace: ${store.workspaceScope}',
                   ),
                 ),
               ),

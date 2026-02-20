@@ -105,6 +105,12 @@ const triggerCatalog = <TriggerDefinition>[
     guide: '외부 HTTP 이벤트 수신 시 실행',
     userInitiated: false,
   ),
+  TriggerDefinition(
+    type: 'trigger.recipe_completed',
+    label: 'Recipe Completed',
+    guide: '다른 레시피 실행 완료 후 연쇄 실행',
+    userInitiated: false,
+  ),
 ];
 
 const actionCatalog = <ActionDefinition>[
@@ -278,6 +284,15 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'command': 'git pull'},
+  ),
+  ActionDefinition(
+    type: 'recipe.run',
+    label: 'Run Recipe (Chain)',
+    category: 'Orchestration',
+    guide: '현재 레시피 완료/실패 조건에 따라 다른 레시피 실행',
+    sensitive: false,
+    supportedLocally: true,
+    defaultParams: {'recipe_id': '', 'when': 'on_success'},
   ),
 ];
 
