@@ -1,0 +1,47 @@
+{
+  "id": "web-clipboard-quick-note",
+  "name": "Web Clipboard Quick Note",
+  "version": "0.3.0",
+  "min_runtime_version": "0.3.0",
+  "required_connectors": [
+    "hotkey",
+    "clipboard",
+    "file",
+    "notification"
+  ],
+  "permissions": {
+    "notification_send": true,
+    "network_request": null,
+    "file_access": {
+      "roots": [
+        "sandbox://notes"
+      ],
+      "ops": [
+        "write",
+        "read"
+      ]
+    },
+    "clipboard_read": true,
+    "clipboard_write": false,
+    "hotkey_register": true,
+    "camera_capture": null,
+    "microphone_record": null,
+    "webcam_capture": null,
+    "health_read": null,
+    "health_export": false
+  },
+  "risk_level": "Standard",
+  "user_initiated_required": false,
+  "signature": null,
+  "publisher": {
+    "id": "arquent-local",
+    "display_name": "Arquent Local Builder",
+    "verified": true
+  },
+  "tags": [
+    "web",
+    "clipboard",
+    "notes",
+    "productivity"
+  ]
+}

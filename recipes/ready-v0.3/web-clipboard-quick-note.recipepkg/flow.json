@@ -1,0 +1,35 @@
+{
+  "trigger": {
+    "trigger_type": "trigger.hotkey",
+    "params": {}
+  },
+  "condition": null,
+  "actions": [
+    {
+      "id": "a1",
+      "action_type": "clipboard.read",
+      "params": {}
+    },
+    {
+      "id": "a2",
+      "action_type": "transform.regex_clean",
+      "params": {}
+    },
+    {
+      "id": "a3",
+      "action_type": "file.write",
+      "params": {
+        "uri": "sandbox://notes/clip_{{metadata.run_id}}.txt",
+        "content": "{{state.cleaned_text}}"
+      }
+    },
+    {
+      "id": "a4",
+      "action_type": "notification.send",
+      "params": {
+        "title": "Quick Note Saved",
+        "body": "Clipboard note was saved to sandbox notes."
+      }
+    }
+  ]
+}
