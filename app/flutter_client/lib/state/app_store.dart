@@ -411,7 +411,7 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  Future<RuntimeExecutionResult?> runRecipe(String recipeId) async {
+  Future<RuntimeExecutionResult?> runRecipe(String recipeId, {String? sharedUrl}) async {
     final package = installed[recipeId];
     if (package == null) {
       status = 'Recipe not installed';
@@ -421,6 +421,7 @@ class AppStore extends ChangeNotifier {
 
     final manifest = package.manifestJson;
     final flow = package.flowJson;
+    final selectedUrl = (sharedUrl ?? runtimeSharedUrl).trim();
     final sensitiveUsed = (manifest['risk_level'] as String? ?? 'Standard') == 'Sensitive';
     final runtime = LocalRuntime(_runtimeEnvironment);
 
@@ -430,7 +431,7 @@ class AppStore extends ChangeNotifier {
         recipeId: recipeId,
         manifest: manifest,
         flow: flow,
-        runtimeInputs: {'shared_url': runtimeSharedUrl},
+        runtimeInputs: {'shared_url': selectedUrl.isEmpty ? runtimeSharedUrl : selectedUrl},
       );
     } catch (error) {
       result = RuntimeExecutionResult(

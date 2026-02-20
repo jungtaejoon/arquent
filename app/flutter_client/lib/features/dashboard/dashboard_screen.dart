@@ -7,6 +7,35 @@ import '../../state/app_store.dart';
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
+  Future<String?> _promptRunUrl(BuildContext context, String initialValue) async {
+    final controller = TextEditingController(text: initialValue);
+    return showDialog<String>(
+      context: context,
+      builder: (dialogContext) {
+        return AlertDialog(
+          title: const Text('Run URL'),
+          content: TextField(
+            controller: controller,
+            autofocus: true,
+            decoration: const InputDecoration(
+              hintText: 'https://example.com/article',
+            ),
+          ),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.of(dialogContext).pop(),
+              child: const Text('Cancel'),
+            ),
+            FilledButton(
+              onPressed: () => Navigator.of(dialogContext).pop(controller.text.trim()),
+              child: const Text('Run'),
+            ),
+          ],
+        );
+      },
+    );
+  }
+
   @override
   Widget build(BuildContext context) {
     final store = AppStore.instance;
@@ -33,15 +62,6 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text('Installed Recipes (${store.installed.length})'),
               const SizedBox(height: 8),
-              TextFormField(
-                initialValue: store.runtimeSharedUrl,
-                decoration: const InputDecoration(
-                  labelText: 'Run URL',
-                  hintText: 'https://example.com/article',
-                ),
-                onFieldSubmitted: store.updateRuntimeSharedUrl,
-              ),
-              const SizedBox(height: 8),
               if (store.installed.isEmpty)
                 const Text('Install from Marketplace first.')
               else
@@ -51,7 +71,14 @@ class DashboardScreen extends StatelessWidget {
                       title: Text(entry.key),
                       subtitle: const Text('Local-first execution'),
                       trailing: FilledButton(
-                        onPressed: () => store.runRecipe(entry.key),
+                        onPressed: () async {
+                          final url = await _promptRunUrl(context, store.runtimeSharedUrl);
+                          if (url == null || url.isEmpty) {
+                            return;
+                          }
+                          store.updateRuntimeSharedUrl(url);
+                          await store.runRecipe(entry.key, sharedUrl: url);
+                        },
                         child: const Text('Run Local'),
                       ),
                     ),
