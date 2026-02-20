@@ -1,6 +1,13 @@
 {
   "id": "web-clipboard-quick-note",
   "name": "Web Clipboard Quick Note",
+  "description": "Capture current clipboard text, clean spacing, and save it as a timestamped note in one hotkey run.",
+  "usage": [
+    "Copy any text in browser or desktop app.",
+    "Run this recipe from Dashboard (or configured hotkey trigger).",
+    "Open Execution Logs to confirm save path and completion.",
+    "Find note file under sandbox://notes as clip_<run_id>.txt."
+  ],
   "version": "0.3.0",
   "min_runtime_version": "0.3.0",
   "required_connectors": [

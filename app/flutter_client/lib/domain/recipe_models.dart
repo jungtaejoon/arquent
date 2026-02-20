@@ -1,14 +1,32 @@
 import 'dart:convert';
 
 class CloudRecipeSummary {
-  const CloudRecipeSummary({required this.id, required this.createdAt});
+  const CloudRecipeSummary({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.usage,
+    required this.tags,
+    required this.publisher,
+    required this.createdAt,
+  });
 
   final String id;
+  final String name;
+  final String description;
+  final List<String> usage;
+  final List<String> tags;
+  final String publisher;
   final String createdAt;
 
   factory CloudRecipeSummary.fromJson(Map<String, dynamic> json) {
     return CloudRecipeSummary(
       id: json['id'] as String? ?? '',
+      name: json['name'] as String? ?? (json['id'] as String? ?? ''),
+      description: json['description'] as String? ?? '',
+      usage: (json['usage'] as List<dynamic>? ?? []).map((item) => '$item').toList(),
+      tags: (json['tags'] as List<dynamic>? ?? []).map((item) => '$item').toList(),
+      publisher: json['publisher'] as String? ?? 'Verified Publisher',
       createdAt: json['createdAt'] as String? ?? '',
     );
   }

@@ -16,6 +16,8 @@ class _BuilderScreenState extends State<BuilderScreen> {
   late final TextEditingController _idController;
   late final TextEditingController _draftNameController;
   late final TextEditingController _tagController;
+  late final TextEditingController _descriptionController;
+  late final TextEditingController _usageController;
   String? _selectedTagFilter;
 
   @override
@@ -24,6 +26,8 @@ class _BuilderScreenState extends State<BuilderScreen> {
     _idController = TextEditingController(text: AppStore.instance.draftRecipeId);
     _draftNameController = TextEditingController(text: AppStore.instance.activeDraftName);
     _tagController = TextEditingController();
+    _descriptionController = TextEditingController(text: AppStore.instance.draftDescription);
+    _usageController = TextEditingController(text: AppStore.instance.draftUsageText);
   }
 
   @override
@@ -31,6 +35,8 @@ class _BuilderScreenState extends State<BuilderScreen> {
     _idController.dispose();
     _draftNameController.dispose();
     _tagController.dispose();
+    _descriptionController.dispose();
+    _usageController.dispose();
     super.dispose();
   }
 
@@ -52,6 +58,18 @@ class _BuilderScreenState extends State<BuilderScreen> {
             _draftNameController.value = TextEditingValue(
               text: store.activeDraftName,
               selection: TextSelection.collapsed(offset: store.activeDraftName.length),
+            );
+          }
+          if (_descriptionController.text != store.draftDescription) {
+            _descriptionController.value = TextEditingValue(
+              text: store.draftDescription,
+              selection: TextSelection.collapsed(offset: store.draftDescription.length),
+            );
+          }
+          if (_usageController.text != store.draftUsageText) {
+            _usageController.value = TextEditingValue(
+              text: store.draftUsageText,
+              selection: TextSelection.collapsed(offset: store.draftUsageText.length),
             );
           }
 
@@ -200,6 +218,28 @@ class _BuilderScreenState extends State<BuilderScreen> {
                 ],
               ),
               const Divider(height: 24),
+              TextField(
+                controller: _descriptionController,
+                minLines: 2,
+                maxLines: 4,
+                onChanged: store.updateDraftDescription,
+                decoration: const InputDecoration(
+                  labelText: 'Recipe Description',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _usageController,
+                minLines: 3,
+                maxLines: 6,
+                onChanged: store.updateDraftUsageText,
+                decoration: const InputDecoration(
+                  labelText: 'Usage Steps (one per line)',
+                  border: OutlineInputBorder(),
+                ),
+              ),
+              const SizedBox(height: 12),
               const Text('Recipe ID'),
               const SizedBox(height: 8),
               TextField(

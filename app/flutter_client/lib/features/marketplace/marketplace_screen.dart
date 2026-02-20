@@ -171,21 +171,53 @@ class _RecipeTile extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final usage = recipe.usage;
+    final tags = recipe.tags;
     return Card(
-      child: ListTile(
-        title: Text(recipe.id),
-        subtitle: Text('Published: ${recipe.createdAt}\nVerified Publisher'),
-        trailing: Wrap(
-          spacing: 8,
-          crossAxisAlignment: WrapCrossAlignment.center,
-          children: [
-            const RiskBadge(riskLevel: RiskLevel.standard),
-            FilledButton(
-              onPressed: installed ? null : onInstall,
-              child: Text(installed ? 'Installed' : 'Install'),
+      child: ExpansionTile(
+        title: Text(recipe.name),
+        subtitle: Text('ID: ${recipe.id}\nBy: ${recipe.publisher}\nPublished: ${recipe.createdAt}'),
+        childrenPadding: const EdgeInsets.fromLTRB(16, 0, 16, 12),
+        children: [
+          if (recipe.description.isNotEmpty) ...[
+            Align(
+              alignment: Alignment.centerLeft,
+              child: Text(recipe.description),
             ),
+            const SizedBox(height: 8),
           ],
-        ),
+          if (usage.isNotEmpty) ...[
+            const Align(
+              alignment: Alignment.centerLeft,
+              child: Text('How to use'),
+            ),
+            const SizedBox(height: 4),
+            ...usage.asMap().entries.map(
+              (entry) => Align(
+                alignment: Alignment.centerLeft,
+                child: Text('${entry.key + 1}. ${entry.value}'),
+              ),
+            ),
+            const SizedBox(height: 8),
+          ],
+          if (tags.isNotEmpty)
+            Wrap(
+              spacing: 8,
+              runSpacing: 8,
+              children: tags.map((tag) => Chip(label: Text('#$tag'))).toList(),
+            ),
+          const SizedBox(height: 8),
+          Row(
+            children: [
+              const RiskBadge(riskLevel: RiskLevel.standard),
+              const SizedBox(width: 8),
+              FilledButton(
+                onPressed: installed ? null : onInstall,
+                child: Text(installed ? 'Installed' : 'Install'),
+              ),
+            ],
+          ),
+        ],
       ),
     );
   }

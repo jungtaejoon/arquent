@@ -5,6 +5,45 @@ import crypto from 'node:crypto';
 import { z } from 'zod';
 import { verifyPackageSignature } from './signature.js';
 import { getPackage, listPackages, putPackage } from './store.js';
+function summarizePackage(pkg) {
+    let manifest = {};
+    try {
+        manifest = JSON.parse(pkg.manifest);
+    }
+    catch {
+        manifest = {};
+    }
+    const name = typeof manifest.name === 'string' && manifest.name.trim().length > 0
+        ? manifest.name.trim()
+        : pkg.id;
+    const description = typeof manifest.description === 'string'
+        ? manifest.description.trim()
+        : '';
+    const usage = Array.isArray(manifest.usage)
+        ? manifest.usage.map((item) => String(item)).filter((item) => item.trim().length > 0)
+        : [];
+    const tags = Array.isArray(manifest.tags)
+        ? manifest.tags
+            .map((item) => String(item).trim().toLowerCase())
+            .filter((item) => item.length > 0)
+        : [];
+    let publisher = 'Verified Publisher';
+    if (manifest.publisher && typeof manifest.publisher === 'object') {
+        const pub = manifest.publisher;
+        if (typeof pub.display_name === 'string' && pub.display_name.trim().length > 0) {
+            publisher = pub.display_name.trim();
+        }
+    }
+    return {
+        id: pkg.id,
+        name,
+        description,
+        usage,
+        tags,
+        publisher,
+        createdAt: pkg.createdAt,
+    };
+}
 export function buildServer() {
     const app = Fastify({ logger: false });
     const corsOrigin = process.env.CORS_ORIGIN ?? true;
@@ -30,10 +69,7 @@ export function buildServer() {
     });
     app.get('/marketplace/recipes', async () => {
         return {
-            recipes: listPackages().map((pkg) => ({
-                id: pkg.id,
-                createdAt: pkg.createdAt,
-            })),
+            recipes: listPackages().map(summarizePackage),
         };
     });
     const publishSchema = z.object({
@@ -95,6 +131,13 @@ export function buildServer() {
             user_initiated_required: false,
             signature: null,
             publisher: { id: 'demo', display_name: 'Demo Publisher', verified: true },
+            description: 'Send a quick focus reset notification from marketplace demo recipe.',
+            usage: [
+                'Open Marketplace and install this recipe.',
+                'Run from Dashboard.',
+                'Check Execution Logs for completion.',
+            ],
+            tags: ['demo', 'focus', 'notification'],
         });
         const flow = JSON.stringify({
             trigger: { trigger_type: 'trigger.manual', params: {} },
@@ -130,6 +173,35 @@ export function buildServer() {
             createdAt: new Date().toISOString(),
         });
         return reply.send({ ok: true, id });
+    });
+    const publishLocalSchema = z.object({
+        id: z.string().min(1),
+        manifest: z.string().min(1),
+        flow: z.string().min(1),
+    });
+    app.post('/marketplace/publish-local', async (request, reply) => {
+        const parsed = publishLocalSchema.safeParse(request.body);
+        if (!parsed.success) {
+            return reply.code(400).send({ error: 'invalid_publish_local_payload' });
+        }
+        const digestHex = crypto
+            .createHash('sha256')
+            .update(parsed.data.manifest + parsed.data.flow)
+            .digest('hex');
+        const { publicKey, privateKey } = crypto.generateKeyPairSync('ed25519');
+        const signature = crypto.sign(null, Buffer.from(digestHex, 'utf8'), privateKey);
+        const publicDer = publicKey.export({ format: 'der', type: 'spki' });
+        const publicKeyBase64 = Buffer.from(publicDer).subarray(-32).toString('base64');
+        const signatureBase64 = signature.toString('base64');
+        putPackage({
+            id: parsed.data.id,
+            manifest: parsed.data.manifest,
+            flow: parsed.data.flow,
+            signature: signatureBase64,
+            publicKey: publicKeyBase64,
+            createdAt: new Date().toISOString(),
+        });
+        return reply.send({ ok: true, id: parsed.data.id });
     });
     app.get('/marketplace/package/:id', async (request, reply) => {
         const params = request.params;

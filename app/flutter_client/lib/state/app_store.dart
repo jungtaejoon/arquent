@@ -11,6 +11,8 @@ class RecipeDraft {
   RecipeDraft({
     required this.name,
     required this.updatedAt,
+    required this.description,
+    required List<String> usageSteps,
     required this.recipeId,
     required this.riskLevel,
     required this.triggerType,
@@ -19,12 +21,15 @@ class RecipeDraft {
     required Map<String, Map<String, dynamic>> actionParams,
   })  : actions = Set<String>.from(actions),
         tags = Set<String>.from(tags),
+      usageSteps = List<String>.from(usageSteps),
         actionParams = actionParams.map(
           (key, value) => MapEntry(key, Map<String, dynamic>.from(value)),
         );
 
   String name;
   DateTime updatedAt;
+    String description;
+    final List<String> usageSteps;
   String recipeId;
   String riskLevel;
   String triggerType;
@@ -36,6 +41,8 @@ class RecipeDraft {
     return RecipeDraft(
       name: name,
       updatedAt: updatedAt,
+      description: description,
+      usageSteps: usageSteps,
       recipeId: recipeId,
       riskLevel: riskLevel,
       triggerType: triggerType,
@@ -49,6 +56,12 @@ class RecipeDraft {
     return RecipeDraft(
       name: 'Draft 1',
       updatedAt: DateTime.now(),
+      description: 'Quick personal automation recipe.',
+      usageSteps: const [
+        'Choose trigger and actions.',
+        'Build and install locally.',
+        'Run from Dashboard and review logs.',
+      ],
       recipeId: 'local.custom.recipe',
       riskLevel: 'Standard',
       triggerType: 'trigger.manual',
@@ -111,6 +124,8 @@ class AppStore extends ChangeNotifier {
   }
 
   String get draftRecipeId => _activeDraft.recipeId;
+  String get draftDescription => _activeDraft.description;
+  String get draftUsageText => _activeDraft.usageSteps.join('\n');
   String get draftRiskLevel => _activeDraft.riskLevel;
   String get draftTriggerType => _activeDraft.triggerType;
   Set<String> get draftActions => _activeDraft.actions;
@@ -194,6 +209,12 @@ class AppStore extends ChangeNotifier {
         : RecipeDraft(
           name: 'Draft $_draftSequence',
             updatedAt: DateTime.now(),
+            description: 'Quick personal automation recipe.',
+            usageSteps: const [
+              'Choose trigger and actions.',
+              'Build and install locally.',
+              'Run from Dashboard and review logs.',
+            ],
             recipeId: 'local.custom.recipe',
             riskLevel: 'Standard',
             triggerType: 'trigger.manual',
@@ -221,6 +242,25 @@ class AppStore extends ChangeNotifier {
       return;
     }
     _activeDraft.name = normalized;
+    _touchActiveDraft();
+    notifyListeners();
+  }
+
+  void updateDraftDescription(String value) {
+    _activeDraft.description = value.trim();
+    _touchActiveDraft();
+    notifyListeners();
+  }
+
+  void updateDraftUsageText(String value) {
+    final lines = value
+        .split('\n')
+        .map((line) => line.trim())
+        .where((line) => line.isNotEmpty)
+        .toList(growable: false);
+    _activeDraft.usageSteps
+      ..clear()
+      ..addAll(lines);
     _touchActiveDraft();
     notifyListeners();
   }
@@ -316,7 +356,10 @@ class AppStore extends ChangeNotifier {
   Map<String, dynamic> buildDraftManifest() {
     return {
       'id': _normalizedDraftId,
+      'name': _activeDraft.name,
       'version': '1.0.0',
+      'description': _activeDraft.description,
+      'usage': _activeDraft.usageSteps,
       'risk_level': _activeDraft.riskLevel,
       'user_initiated_required': _activeDraft.riskLevel == 'Sensitive',
       'workspace_scope': workspaceScope,

@@ -77,7 +77,7 @@ describe('cloud api', () => {
       url: '/marketplace/publish-local',
       payload: {
         id: 'local-shared-recipe',
-        manifest: '{"id":"local-shared-recipe"}',
+        manifest: '{"id":"local-shared-recipe","name":"Local Shared Recipe","description":"Local publish metadata","usage":["Step one","Step two"],"tags":["local","guide"],"publisher":{"display_name":"Local Builder"}}',
         flow: '{"trigger":{"trigger_type":"trigger.manual"},"actions":[]}',
       },
     });
@@ -88,7 +88,13 @@ describe('cloud api', () => {
       url: '/marketplace/recipes',
     });
     expect(listResponse.statusCode).toBe(200);
-    expect(listResponse.json().recipes.some((item: { id: string }) => item.id === 'local-shared-recipe')).toBe(true);
+    const recipe = listResponse
+      .json()
+      .recipes.find((item: { id: string }) => item.id === 'local-shared-recipe');
+    expect(recipe).toBeDefined();
+    expect(recipe.name).toBe('Local Shared Recipe');
+    expect(recipe.description).toBe('Local publish metadata');
+    expect(recipe.usage).toEqual(['Step one', 'Step two']);
 
     await app.close();
   });

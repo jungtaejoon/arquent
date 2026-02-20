@@ -7,6 +7,60 @@ import { z } from 'zod';
 import { verifyPackageSignature } from './signature.js';
 import { getPackage, listPackages, putPackage } from './store.js';
 
+function summarizePackage(pkg: {
+  id: string;
+  manifest: string;
+  createdAt: string;
+}): {
+  id: string;
+  name: string;
+  description: string;
+  usage: string[];
+  tags: string[];
+  publisher: string;
+  createdAt: string;
+} {
+  let manifest: Record<string, unknown> = {};
+  try {
+    manifest = JSON.parse(pkg.manifest) as Record<string, unknown>;
+  } catch {
+    manifest = {};
+  }
+
+  const name = typeof manifest.name === 'string' && manifest.name.trim().length > 0
+    ? manifest.name.trim()
+    : pkg.id;
+  const description = typeof manifest.description === 'string'
+    ? manifest.description.trim()
+    : '';
+  const usage = Array.isArray(manifest.usage)
+    ? manifest.usage.map((item) => String(item)).filter((item) => item.trim().length > 0)
+    : [];
+  const tags = Array.isArray(manifest.tags)
+    ? manifest.tags
+        .map((item) => String(item).trim().toLowerCase())
+        .filter((item) => item.length > 0)
+    : [];
+
+  let publisher = 'Verified Publisher';
+  if (manifest.publisher && typeof manifest.publisher === 'object') {
+    const pub = manifest.publisher as Record<string, unknown>;
+    if (typeof pub.display_name === 'string' && pub.display_name.trim().length > 0) {
+      publisher = pub.display_name.trim();
+    }
+  }
+
+  return {
+    id: pkg.id,
+    name,
+    description,
+    usage,
+    tags,
+    publisher,
+    createdAt: pkg.createdAt,
+  };
+}
+
 export function buildServer() {
   const app = Fastify({ logger: false });
   const corsOrigin = process.env.CORS_ORIGIN ?? true;
@@ -37,10 +91,7 @@ export function buildServer() {
 
   app.get('/marketplace/recipes', async () => {
     return {
-      recipes: listPackages().map((pkg) => ({
-        id: pkg.id,
-        createdAt: pkg.createdAt,
-      })),
+      recipes: listPackages().map(summarizePackage),
     };
   });
 
@@ -110,6 +161,13 @@ export function buildServer() {
       user_initiated_required: false,
       signature: null,
       publisher: { id: 'demo', display_name: 'Demo Publisher', verified: true },
+      description: 'Send a quick focus reset notification from marketplace demo recipe.',
+      usage: [
+        'Open Marketplace and install this recipe.',
+        'Run from Dashboard.',
+        'Check Execution Logs for completion.',
+      ],
+      tags: ['demo', 'focus', 'notification'],
     });
     const flow = JSON.stringify({
       trigger: { trigger_type: 'trigger.manual', params: {} },
