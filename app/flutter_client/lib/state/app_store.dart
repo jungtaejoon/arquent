@@ -100,6 +100,7 @@ class AppStore extends ChangeNotifier {
   final List<ExecutionLogEntry> logs = [];
   Map<String, dynamic> lastArtifacts = const {};
   String workspaceScope = 'personal';
+  String runtimeSharedUrl = 'https://example.com/article';
   String get cloudBaseUrl => _cloudApi.baseUrl;
 
   List<String> get draftKeys => _drafts.keys.toList(growable: false);
@@ -174,6 +175,16 @@ class AppStore extends ChangeNotifier {
   void updateWorkspaceScope(String value) {
     workspaceScope = value;
     status = 'Workspace scope: $value';
+    notifyListeners();
+  }
+
+  void updateRuntimeSharedUrl(String value) {
+    final normalized = value.trim();
+    if (normalized.isEmpty) {
+      return;
+    }
+    runtimeSharedUrl = normalized;
+    status = 'Run URL updated';
     notifyListeners();
   }
 
@@ -419,6 +430,7 @@ class AppStore extends ChangeNotifier {
         recipeId: recipeId,
         manifest: manifest,
         flow: flow,
+        runtimeInputs: {'shared_url': runtimeSharedUrl},
       );
     } catch (error) {
       result = RuntimeExecutionResult(
@@ -444,7 +456,9 @@ class AppStore extends ChangeNotifier {
     );
     lastArtifacts = result.artifacts;
 
-    status = result.success ? 'Executed $recipeId' : 'Run failed: ${result.message}';
+    status = result.success
+      ? 'Executed $recipeId: ${result.message}'
+      : 'Run failed: ${result.message}';
     notifyListeners();
     return result;
   }

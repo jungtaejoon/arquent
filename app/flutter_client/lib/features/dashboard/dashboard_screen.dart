@@ -33,6 +33,15 @@ class DashboardScreen extends StatelessWidget {
               const SizedBox(height: 16),
               Text('Installed Recipes (${store.installed.length})'),
               const SizedBox(height: 8),
+              TextFormField(
+                initialValue: store.runtimeSharedUrl,
+                decoration: const InputDecoration(
+                  labelText: 'Run URL',
+                  hintText: 'https://example.com/article',
+                ),
+                onFieldSubmitted: store.updateRuntimeSharedUrl,
+              ),
+              const SizedBox(height: 8),
               if (store.installed.isEmpty)
                 const Text('Install from Marketplace first.')
               else
