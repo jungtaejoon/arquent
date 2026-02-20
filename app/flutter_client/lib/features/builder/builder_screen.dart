@@ -320,6 +320,56 @@ class _BuilderScreenState extends State<BuilderScreen> {
                 }).toList(),
               ),
               const SizedBox(height: 12),
+              const Text('Action Parameters'),
+              const SizedBox(height: 8),
+              if (store.draftActions.isEmpty)
+                const Text('Select actions first.')
+              else
+                ...store.draftActions.map((actionType) {
+                  final params =
+                      store.draftActionParams[actionType] ?? const <String, dynamic>{};
+                  if (params.isEmpty) {
+                    return Card(
+                      child: ListTile(
+                        title: Text(actionType),
+                        subtitle: const Text('No editable params'),
+                      ),
+                    );
+                  }
+                  return Card(
+                    child: Padding(
+                      padding: const EdgeInsets.all(12),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(actionType, style: Theme.of(context).textTheme.titleMedium),
+                          const SizedBox(height: 8),
+                          ...params.entries.map(
+                            (entry) => Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: TextFormField(
+                                key: ValueKey('$actionType.${entry.key}'),
+                                initialValue: entry.value.toString(),
+                                decoration: InputDecoration(
+                                  labelText: entry.key,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                onChanged: (value) {
+                                  store.updateDraftActionParam(
+                                    actionType,
+                                    entry.key,
+                                    value,
+                                  );
+                                },
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  );
+                }),
+              const SizedBox(height: 12),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,

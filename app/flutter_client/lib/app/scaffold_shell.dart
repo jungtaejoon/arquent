@@ -20,16 +20,30 @@ class AppScaffoldShell extends StatelessWidget {
         child: ListView(
           children: [
             const DrawerHeader(child: Text('Automation Platform')),
+            const ListTile(
+              dense: true,
+              title: Text('Use Recipes'),
+            ),
             _item(context, 'Dashboard', AppRoutes.dashboard),
+            _item(context, 'Execution Logs', AppRoutes.executionLogs),
+            _item(context, 'Scenario Lab', AppRoutes.scenarioLab),
+            const Divider(height: 12),
+            const ListTile(
+              dense: true,
+              title: Text('Create Recipes'),
+            ),
             _item(context, 'Builder', AppRoutes.builder),
             _item(context, 'Trigger Setup', AppRoutes.triggerSetup),
             _item(context, 'Action Setup', AppRoutes.actionSetup),
             _item(context, 'Permission Review', AppRoutes.permissionReview),
-            _item(context, 'Execution Logs', AppRoutes.executionLogs),
-            _item(context, 'Import/Export', AppRoutes.importExport),
             _item(context, 'Workspace', AppRoutes.workspace),
+            const Divider(height: 12),
+            const ListTile(
+              dense: true,
+              title: Text('Share Recipes'),
+            ),
             _item(context, 'Marketplace', AppRoutes.marketplace),
-            _item(context, 'Scenario Lab', AppRoutes.scenarioLab),
+            _item(context, 'Import/Export', AppRoutes.importExport),
           ],
         ),
       ),

@@ -42,6 +42,10 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
+              const Text('Share Recipes'),
+              const SizedBox(height: 4),
+              const Text('Publish local recipes or install community recipes.'),
+              const SizedBox(height: 8),
               Text('Cloud API: ${store.cloudBaseUrl}'),
               const SizedBox(height: 8),
               Row(
@@ -138,6 +142,8 @@ class _MarketplaceScreenState extends State<MarketplaceScreen> {
               const SizedBox(height: 8),
               Text('Status: ${store.status}'),
               const SizedBox(height: 16),
+              const Text('Browse & Install'),
+              const SizedBox(height: 8),
               Text('Marketplace Recipes (${store.marketplace.length})'),
               const SizedBox(height: 8),
               if (store.marketplace.isEmpty)

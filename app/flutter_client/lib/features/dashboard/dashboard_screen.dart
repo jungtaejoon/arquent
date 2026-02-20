@@ -47,7 +47,34 @@ class DashboardScreen extends StatelessWidget {
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
-              const Text('Recipes'),
+              const Text('Use Recipes'),
+              const SizedBox(height: 8),
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('This screen is for running installed recipes.'),
+                      const SizedBox(height: 8),
+                      Wrap(
+                        spacing: 8,
+                        runSpacing: 8,
+                        children: [
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.builder),
+                            child: const Text('Go to Builder'),
+                          ),
+                          OutlinedButton(
+                            onPressed: () => Navigator.of(context).pushNamed(AppRoutes.marketplace),
+                            child: const Text('Go to Marketplace'),
+                          ),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ),
               const SizedBox(height: 8),
               Card(
                 child: ListTile(
