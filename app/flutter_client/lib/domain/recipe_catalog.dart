@@ -100,24 +100,59 @@ const triggerCatalog = <TriggerDefinition>[
     label: 'Hotkey',
     guide: '단축키 입력으로 실행',
     userInitiated: true,
+    parameters: [
+      ParameterDefinition(
+        key: 'key_combo',
+        label: 'Key Combination',
+        type: ParameterType.string,
+        description: 'e.g. Ctrl+Shift+A',
+        required: true,
+      ),
+    ],
   ),
   TriggerDefinition(
     type: 'trigger.widget_tap',
     label: 'Widget Tap',
     guide: '위젯 탭으로 실행',
     userInitiated: true,
+    parameters: [
+      ParameterDefinition(
+        key: 'widget_id',
+        label: 'Widget ID',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   TriggerDefinition(
     type: 'trigger.share_sheet',
     label: 'Share Sheet',
     guide: '공유 시트에서 전달된 입력으로 실행',
     userInitiated: true,
+    parameters: [
+      ParameterDefinition(
+        key: 'accepted_types',
+        label: 'Accepted Types',
+        type: ParameterType.list,
+        description: 'e.g. text/plain, image/*',
+        defaultValue: ['text/plain'],
+      ),
+    ],
   ),
   TriggerDefinition(
     type: 'trigger.schedule',
     label: 'Schedule',
     guide: '시간/주기 기반 자동 실행 (민감 동작에는 비권장)',
     userInitiated: false,
+    parameters: [
+      ParameterDefinition(
+        key: 'cron_expression',
+        label: 'Cron Expression',
+        type: ParameterType.string,
+        description: 'e.g. 0 0 * * * (Every day at midnight)',
+        required: true,
+      ),
+    ],
   ),
   TriggerDefinition(
     type: 'trigger.app_open',
@@ -130,18 +165,61 @@ const triggerCatalog = <TriggerDefinition>[
     label: 'Location Enter',
     guide: '특정 위치 진입 시 실행',
     userInitiated: false,
+    parameters: [
+      ParameterDefinition(
+        key: 'latitude',
+        label: 'Latitude',
+        type: ParameterType.number,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'longitude',
+        label: 'Longitude',
+        type: ParameterType.number,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'radius_meters',
+        label: 'Radius (meters)',
+        type: ParameterType.number,
+        defaultValue: 100,
+      ),
+    ],
   ),
   TriggerDefinition(
     type: 'trigger.webhook',
     label: 'Webhook',
     guide: '외부 HTTP 이벤트 수신 시 실행',
     userInitiated: false,
+    parameters: [
+      ParameterDefinition(
+        key: 'path',
+        label: 'Webhook Path',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   TriggerDefinition(
     type: 'trigger.recipe_completed',
     label: 'Recipe Completed',
     guide: '다른 레시피 실행 완료 후 연쇄 실행',
     userInitiated: false,
+    parameters: [
+      ParameterDefinition(
+        key: 'source_recipe_id',
+        label: 'Source Recipe ID',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'on_status',
+        label: 'On Status',
+        type: ParameterType.enumType,
+        options: ['success', 'failure', 'any'],
+        defaultValue: 'success',
+      ),
+    ],
   ),
 ];
 
@@ -429,4 +507,26 @@ RecipeTemplateDefinition? recipeTemplateById(String id) {
     }
   }
   return null;
+}
+
+TriggerDefinition? triggerDefinitionByType(String type) {
+  for (final definition in triggerCatalog) {
+    if (definition.type == type) {
+      return definition;
+    }
+  }
+  return null;
+}
+
+Map<String, dynamic> defaultParamsForTriggerType(String type) {
+  final definition = triggerDefinitionByType(type);
+  if (definition == null) return {};
+  
+  final params = <String, dynamic>{};
+  for (final param in definition.parameters) {
+    if (param.defaultValue != null) {
+      params[param.key] = param.defaultValue;
+    }
+  }
+  return params;
 }

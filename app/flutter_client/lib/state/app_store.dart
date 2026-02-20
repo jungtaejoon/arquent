@@ -261,7 +261,7 @@ class AppStore extends ChangeNotifier {
     _activeDraft.triggers.add(RecipeTrigger(
       id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
       type: value,
-      params: {},
+      params: defaultParamsForTriggerType(value),
     ));
     _activeDraft.triggerMode = 'any';
     _touchActiveDraft();
@@ -277,17 +277,27 @@ class AppStore extends ChangeNotifier {
       draft.triggers.add(RecipeTrigger(
         id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
         type: triggerType,
-        params: {},
+        params: defaultParamsForTriggerType(triggerType),
       ));
     }
     if (draft.triggers.isEmpty) {
       draft.triggers.add(RecipeTrigger(
         id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
         type: 'trigger.manual',
-        params: {},
+        params: defaultParamsForTriggerType('trigger.manual'),
       ));
     }
     draft.triggerType = draft.triggers.first.type;
+    _touchActiveDraft();
+    notifyListeners();
+  }
+
+  void updateDraftTriggerParam(String triggerId, String key, String value) {
+    final triggerIndex = _activeDraft.triggers.indexWhere((t) => t.id == triggerId);
+    if (triggerIndex < 0) return;
+    
+    final trigger = _activeDraft.triggers[triggerIndex];
+    trigger.params[key] = value;
     _touchActiveDraft();
     notifyListeners();
   }
@@ -321,7 +331,7 @@ class AppStore extends ChangeNotifier {
     _activeDraft.triggers.add(RecipeTrigger(
       id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
       type: template.triggerType,
-      params: {},
+      params: defaultParamsForTriggerType(template.triggerType),
     ));
     _activeDraft.triggerMode = 'any';
     
@@ -372,7 +382,7 @@ class AppStore extends ChangeNotifier {
               RecipeTrigger(
                 id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
                 type: 'trigger.manual',
-                params: {},
+                params: defaultParamsForTriggerType('trigger.manual'),
               ),
             ],
             triggerMode: 'any',
