@@ -415,42 +415,61 @@ class LocalRuntime {
     Map<String, dynamic> state,
     Map<String, dynamic> runtimeInputs,
   ) {
+    if (value.isEmpty) return '';
+
     final runId = DateTime.now().millisecondsSinceEpoch.toString();
-    final sharedUrl = (runtimeInputs['shared_url'] ?? 'https://example.com/article').toString();
-    var output = value
-        .replaceAll('{{metadata.run_id}}', runId)
-        .replaceAll('{{metadata.started_at}}', DateTime.now().toIso8601String())
-        .replaceAll('{{metadata.recipe_id}}', recipeId)
-        .replaceAll('{{state.capture_uri}}', state['capture_uri']?.toString() ?? '')
-        .replaceAll('{{state.ocr_text}}', state['ocr_text']?.toString() ?? '')
-        .replaceAll('{{state.transcript}}', state['transcript']?.toString() ?? '')
-        .replaceAll('{{state.expense_csv_line}}', state['expense_csv_line']?.toString() ?? '')
-        .replaceAll('{{state.cleaned_text}}', state['cleaned_text']?.toString() ?? '')
-        .replaceAll('{{state.sleep_hours}}', state['sleep_hours']?.toString() ?? '')
-        .replaceAll('{{state.steps}}', state['steps']?.toString() ?? '')
-        .replaceAll('{{state.record_uri}}', state['record_uri']?.toString() ?? '')
-        .replaceAll('{{input.file_uri}}', 'sandbox://desktop/screenshots/demo.png')
-        .replaceAll('{{input.memo_text}}', 'Captured from scenario test')
-        .replaceAll('{{input.shared_url}}', sharedUrl)
-        .replaceAll('{{input.tag}}', 'demo');
-    return output;
+    
+    // Create a unified context for resolution
+    final context = <String, dynamic>{
+      'metadata': {
+        'run_id': runId,
+        'started_at': DateTime.now().toIso8601String(),
+        'recipe_id': recipeId,
+      },
+      'state': state,
+      'input': runtimeInputs,
+    };
+
+    // Replace {{ path.to.key }} with values from context
+    return value.replaceAllMapped(RegExp(r'\{\{([^}]+)\}\}'), (match) {
+      final keyPath = match.group(1)?.trim() ?? '';
+      if (keyPath.isEmpty) return '';
+
+      dynamic current = context;
+      final parts = keyPath.split('.');
+      
+      for (final part in parts) {
+        if (current is Map && current.containsKey(part)) {
+          current = current[part];
+        } else {
+          return match.group(0)!; // Return original string if path not found
+        }
+      }
+      
+      return current?.toString() ?? '';
+    });
   }
 
   String _resolveStateReference(String reference, Map<String, dynamic> state) {
     final ref = reference.trim();
-    if (ref.isEmpty) {
-      return '';
-    }
+    if (ref.isEmpty) return '';
+
+    // Direct key access
     if (state.containsKey(ref)) {
       return '${state[ref] ?? ''}';
     }
+    
+    // state.key access
     if (ref.startsWith('state.')) {
       final key = ref.substring('state.'.length);
       return '${state[key] ?? ''}';
     }
-    if (ref.endsWith('.body') || ref == 'body') {
+
+    // Special case for 'body' -> 'http_body' for backward compatibility
+    if (ref == 'body' || ref.endsWith('.body')) {
       return '${state['http_body'] ?? ''}';
     }
+    
     return '${state[ref] ?? ''}';
   }
 
