@@ -89,6 +89,10 @@ export function buildServer() {
     return reply.send({ token: 'stub-token', user: { email: parsed.data.email } });
   });
 
+  app.get('/healthz', async () => {
+    return { ok: true, service: 'arquent-cloud' };
+  });
+
   app.get('/marketplace/recipes', async () => {
     const packages = await listPackages();
     return {

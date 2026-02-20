@@ -16,9 +16,20 @@ let loaded = false;
 let loadedPath = '';
 let pgPool: Pool | null = null;
 let pgReady = false;
+let postgresDisabled = false;
 
 function usePostgres(): boolean {
-  return Boolean(process.env.DATABASE_URL?.trim());
+  return !postgresDisabled && Boolean(process.env.DATABASE_URL?.trim());
+}
+
+function disablePostgres(error: unknown): void {
+  postgresDisabled = true;
+  pgReady = false;
+  if (pgPool) {
+    void pgPool.end();
+  }
+  pgPool = null;
+  console.error('Postgres unavailable. Falling back to file marketplace store.', error);
 }
 
 async function ensurePostgresReady(): Promise<void> {
@@ -31,17 +42,21 @@ async function ensurePostgresReady(): Promise<void> {
   if (pgReady) {
     return;
   }
-  await pgPool.query(`
-    CREATE TABLE IF NOT EXISTS marketplace_packages (
-      id TEXT PRIMARY KEY,
-      manifest TEXT NOT NULL,
-      flow TEXT NOT NULL,
-      signature TEXT NOT NULL,
-      public_key TEXT NOT NULL,
-      created_at TEXT NOT NULL
-    )
-  `);
-  pgReady = true;
+  try {
+    await pgPool.query(`
+      CREATE TABLE IF NOT EXISTS marketplace_packages (
+        id TEXT PRIMARY KEY,
+        manifest TEXT NOT NULL,
+        flow TEXT NOT NULL,
+        signature TEXT NOT NULL,
+        public_key TEXT NOT NULL,
+        created_at TEXT NOT NULL
+      )
+    `);
+    pgReady = true;
+  } catch (error) {
+    disablePostgres(error);
+  }
 }
 
 function resolveDbPath(): string {
@@ -91,21 +106,27 @@ function persist(): void {
 export async function putPackage(pkg: MarketplacePackage): Promise<void> {
   if (usePostgres()) {
     await ensurePostgresReady();
-    await pgPool!.query(
-      `
-        INSERT INTO marketplace_packages (id, manifest, flow, signature, public_key, created_at)
-        VALUES ($1, $2, $3, $4, $5, $6)
-        ON CONFLICT (id)
-        DO UPDATE SET
-          manifest = EXCLUDED.manifest,
-          flow = EXCLUDED.flow,
-          signature = EXCLUDED.signature,
-          public_key = EXCLUDED.public_key,
-          created_at = EXCLUDED.created_at
-      `,
-      [pkg.id, pkg.manifest, pkg.flow, pkg.signature, pkg.publicKey, pkg.createdAt]
-    );
-    return;
+    if (usePostgres()) {
+      try {
+        await pgPool!.query(
+          `
+            INSERT INTO marketplace_packages (id, manifest, flow, signature, public_key, created_at)
+            VALUES ($1, $2, $3, $4, $5, $6)
+            ON CONFLICT (id)
+            DO UPDATE SET
+              manifest = EXCLUDED.manifest,
+              flow = EXCLUDED.flow,
+              signature = EXCLUDED.signature,
+              public_key = EXCLUDED.public_key,
+              created_at = EXCLUDED.created_at
+          `,
+          [pkg.id, pkg.manifest, pkg.flow, pkg.signature, pkg.publicKey, pkg.createdAt]
+        );
+        return;
+      } catch (error) {
+        disablePostgres(error);
+      }
+    }
   }
   ensureLoaded();
   packages.set(pkg.id, pkg);
@@ -115,26 +136,32 @@ export async function putPackage(pkg: MarketplacePackage): Promise<void> {
 export async function getPackage(id: string): Promise<MarketplacePackage | undefined> {
   if (usePostgres()) {
     await ensurePostgresReady();
-    const result = await pgPool!.query(
-      `
-        SELECT id, manifest, flow, signature, public_key, created_at
-        FROM marketplace_packages
-        WHERE id = $1
-      `,
-      [id]
-    );
-    const row = result.rows[0];
-    if (!row) {
-      return undefined;
+    if (usePostgres()) {
+      try {
+        const result = await pgPool!.query(
+          `
+            SELECT id, manifest, flow, signature, public_key, created_at
+            FROM marketplace_packages
+            WHERE id = $1
+          `,
+          [id]
+        );
+        const row = result.rows[0];
+        if (!row) {
+          return undefined;
+        }
+        return {
+          id: row.id,
+          manifest: row.manifest,
+          flow: row.flow,
+          signature: row.signature,
+          publicKey: row.public_key,
+          createdAt: row.created_at,
+        };
+      } catch (error) {
+        disablePostgres(error);
+      }
     }
-    return {
-      id: row.id,
-      manifest: row.manifest,
-      flow: row.flow,
-      signature: row.signature,
-      publicKey: row.public_key,
-      createdAt: row.created_at,
-    };
   }
   ensureLoaded();
   return packages.get(id);
@@ -143,21 +170,27 @@ export async function getPackage(id: string): Promise<MarketplacePackage | undef
 export async function listPackages(): Promise<MarketplacePackage[]> {
   if (usePostgres()) {
     await ensurePostgresReady();
-    const result = await pgPool!.query(
-      `
-        SELECT id, manifest, flow, signature, public_key, created_at
-        FROM marketplace_packages
-        ORDER BY created_at DESC
-      `
-    );
-    return result.rows.map((row) => ({
-      id: row.id,
-      manifest: row.manifest,
-      flow: row.flow,
-      signature: row.signature,
-      publicKey: row.public_key,
-      createdAt: row.created_at,
-    }));
+    if (usePostgres()) {
+      try {
+        const result = await pgPool!.query(
+          `
+            SELECT id, manifest, flow, signature, public_key, created_at
+            FROM marketplace_packages
+            ORDER BY created_at DESC
+          `
+        );
+        return result.rows.map((row) => ({
+          id: row.id,
+          manifest: row.manifest,
+          flow: row.flow,
+          signature: row.signature,
+          publicKey: row.public_key,
+          createdAt: row.created_at,
+        }));
+      } catch (error) {
+        disablePostgres(error);
+      }
+    }
   }
   ensureLoaded();
   return Array.from(packages.values());
@@ -172,4 +205,5 @@ export async function resetStoreForTests(): Promise<void> {
     await pgPool.end();
   }
   pgPool = null;
+  postgresDisabled = false;
 }
