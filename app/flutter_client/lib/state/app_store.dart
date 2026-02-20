@@ -97,10 +97,10 @@ class AppStore extends ChangeNotifier {
   List<CloudRecipeSummary> marketplace = const [];
   final Map<String, CloudRecipePackage> installed = {};
   final Map<String, Set<String>> _installedRecipeTags = {};
+  final Map<String, String> _recipeSharedUrls = {};
   final List<ExecutionLogEntry> logs = [];
   Map<String, dynamic> lastArtifacts = const {};
   String workspaceScope = 'personal';
-  String runtimeSharedUrl = 'https://example.com/article';
   String get cloudBaseUrl => _cloudApi.baseUrl;
 
   List<String> get draftKeys => _drafts.keys.toList(growable: false);
@@ -150,6 +150,7 @@ class AppStore extends ChangeNotifier {
     await _withBusy(() async {
       final package = await _cloudApi.fetchRecipePackage(recipeId);
       installed[recipeId] = package;
+      _recipeSharedUrls.putIfAbsent(recipeId, () => 'https://example.com/article');
       _syncInstalledRecipeTags(recipeId, package.manifestJson);
       status = 'Installed $recipeId';
     });
@@ -178,14 +179,44 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateRuntimeSharedUrl(String value) {
+  void updateRecipeSharedUrl(String recipeId, String value) {
     final normalized = value.trim();
-    if (normalized.isEmpty) {
+    if (recipeId.trim().isEmpty || normalized.isEmpty) {
       return;
     }
-    runtimeSharedUrl = normalized;
+    _recipeSharedUrls[recipeId] = normalized;
     status = 'Run URL updated';
     notifyListeners();
+  }
+
+  String recipeSharedUrl(String recipeId) {
+    return _recipeSharedUrls[recipeId] ?? 'https://example.com/article';
+  }
+
+  bool recipeNeedsSharedUrl(String recipeId) {
+    final package = installed[recipeId];
+    if (package == null) {
+      return false;
+    }
+    final actions = (package.flowJson['actions'] as List<dynamic>? ?? [])
+        .whereType<Map<String, dynamic>>();
+
+    for (final action in actions) {
+      final type = (action['action_type'] ?? '').toString();
+      if (type != 'http.request' && type != 'network.request') {
+        continue;
+      }
+      final params = action['params'] as Map<String, dynamic>? ?? const {};
+      if (params['url_from_input'] == true) {
+        return true;
+      }
+      final url = (params['url'] ?? '').toString();
+      if (url.contains('{{input.shared_url}}')) {
+        return true;
+      }
+    }
+
+    return false;
   }
 
   void updateDraftRecipeId(String value) {
@@ -359,6 +390,7 @@ class AppStore extends ChangeNotifier {
       signature: 'local-dev-signature',
       publicKey: 'local-dev-key',
     );
+    _recipeSharedUrls.putIfAbsent(id, () => 'https://example.com/article');
     _installedRecipeTags[id] = Set<String>.from(_activeDraft.tags);
     status = 'Built and installed $id';
     notifyListeners();
@@ -406,6 +438,7 @@ class AppStore extends ChangeNotifier {
       throw Exception('Invalid package: missing id');
     }
     installed[package.id] = package;
+    _recipeSharedUrls.putIfAbsent(package.id, () => 'https://example.com/article');
     _syncInstalledRecipeTags(package.id, package.manifestJson);
     status = 'Imported ${package.id}';
     notifyListeners();
@@ -421,7 +454,7 @@ class AppStore extends ChangeNotifier {
 
     final manifest = package.manifestJson;
     final flow = package.flowJson;
-    final selectedUrl = (sharedUrl ?? runtimeSharedUrl).trim();
+    final selectedUrl = (sharedUrl ?? recipeSharedUrl(recipeId)).trim();
     final sensitiveUsed = (manifest['risk_level'] as String? ?? 'Standard') == 'Sensitive';
     final runtime = LocalRuntime(_runtimeEnvironment);
 
@@ -431,7 +464,9 @@ class AppStore extends ChangeNotifier {
         recipeId: recipeId,
         manifest: manifest,
         flow: flow,
-        runtimeInputs: {'shared_url': selectedUrl.isEmpty ? runtimeSharedUrl : selectedUrl},
+        runtimeInputs: {
+          'shared_url': selectedUrl.isEmpty ? recipeSharedUrl(recipeId) : selectedUrl,
+        },
       );
     } catch (error) {
       result = RuntimeExecutionResult(

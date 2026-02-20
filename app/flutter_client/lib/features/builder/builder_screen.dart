@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:convert';
 import 'package:flutter/services.dart';
 
+import '../../app/app.dart';
 import '../../app/scaffold_shell.dart';
 import '../../state/app_store.dart';
 
@@ -13,6 +14,24 @@ class BuilderScreen extends StatefulWidget {
 }
 
 class _BuilderScreenState extends State<BuilderScreen> {
+  static const _triggerOptions = [
+    ('trigger.manual', 'Manual Run'),
+    ('trigger.hotkey', 'Hotkey'),
+    ('trigger.widget_tap', 'Widget Tap'),
+    ('trigger.share_sheet', 'Share Sheet'),
+    ('trigger.schedule', 'Schedule'),
+  ];
+
+  static const _actionOptions = [
+    ('notification.send', 'Notification'),
+    ('file.write', 'File Write'),
+    ('clipboard.write', 'Clipboard Write'),
+    ('http.request', 'HTTP Request'),
+    ('camera.capture', 'Camera Capture'),
+    ('microphone.record', 'Microphone Record'),
+    ('health.read', 'Health Read'),
+  ];
+
   late final TextEditingController _idController;
   late final TextEditingController _draftNameController;
   late final TextEditingController _tagController;
@@ -266,6 +285,54 @@ class _BuilderScreenState extends State<BuilderScreen> {
                     store.updateDraftRiskLevel(value);
                   }
                 },
+              ),
+              const SizedBox(height: 12),
+              const Text('Trigger'),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: store.draftTriggerType,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                ),
+                items: _triggerOptions
+                    .map((option) => DropdownMenuItem(value: option.$1, child: Text(option.$2)))
+                    .toList(),
+                onChanged: (value) {
+                  if (value != null) {
+                    store.updateDraftTrigger(value);
+                  }
+                },
+              ),
+              const SizedBox(height: 12),
+              const Text('Actions'),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: _actionOptions.map((option) {
+                  final actionType = option.$1;
+                  final selected = store.draftActions.contains(actionType);
+                  return FilterChip(
+                    label: Text(option.$2),
+                    selected: selected,
+                    onSelected: (_) => store.toggleDraftAction(actionType),
+                  );
+                }).toList(),
+              ),
+              const SizedBox(height: 12),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.triggerSetup),
+                    child: const Text('Detailed Trigger Setup'),
+                  ),
+                  OutlinedButton(
+                    onPressed: () => Navigator.of(context).pushNamed(AppRoutes.actionSetup),
+                    child: const Text('Detailed Action Setup'),
+                  ),
+                ],
               ),
               const SizedBox(height: 12),
               Card(

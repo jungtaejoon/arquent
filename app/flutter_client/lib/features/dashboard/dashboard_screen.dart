@@ -72,12 +72,19 @@ class DashboardScreen extends StatelessWidget {
                       subtitle: const Text('Local-first execution'),
                       trailing: FilledButton(
                         onPressed: () async {
-                          final url = await _promptRunUrl(context, store.runtimeSharedUrl);
-                          if (url == null || url.isEmpty) {
-                            return;
+                          String? sharedUrl;
+                          if (store.recipeNeedsSharedUrl(entry.key)) {
+                            final url = await _promptRunUrl(
+                              context,
+                              store.recipeSharedUrl(entry.key),
+                            );
+                            if (url == null || url.isEmpty) {
+                              return;
+                            }
+                            sharedUrl = url;
+                            store.updateRecipeSharedUrl(entry.key, url);
                           }
-                          store.updateRuntimeSharedUrl(url);
-                          await store.runRecipe(entry.key, sharedUrl: url);
+                          await store.runRecipe(entry.key, sharedUrl: sharedUrl);
                         },
                         child: const Text('Run Local'),
                       ),
