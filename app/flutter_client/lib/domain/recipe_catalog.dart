@@ -232,6 +232,20 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'title': 'Automation done', 'body': 'Run {{metadata.run_id}} finished.'},
+    parameters: [
+      ParameterDefinition(
+        key: 'title',
+        label: 'Title',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'body',
+        label: 'Body',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'file.write',
@@ -241,6 +255,20 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'uri': 'sandbox://notes/{{metadata.run_id}}.txt', 'content': 'Created from Builder'},
+    parameters: [
+      ParameterDefinition(
+        key: 'uri',
+        label: 'File URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'content',
+        label: 'Content',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'file.move',
@@ -250,6 +278,20 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'uri': 'sandbox://notes/source.txt', 'destination': 'sandbox://archive/target.txt'},
+    parameters: [
+      ParameterDefinition(
+        key: 'uri',
+        label: 'Source URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'destination',
+        label: 'Destination URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'file.rename',
@@ -259,6 +301,20 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'uri': 'sandbox://notes/source.txt', 'new_name': 'renamed.txt'},
+    parameters: [
+      ParameterDefinition(
+        key: 'uri',
+        label: 'Source URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'new_name',
+        label: 'New Name',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'clipboard.write',
@@ -268,6 +324,14 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'text': 'Copied from automation run'},
+    parameters: [
+      ParameterDefinition(
+        key: 'text',
+        label: 'Text to Copy',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'clipboard.read',
@@ -286,6 +350,31 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'method': 'GET', 'url': 'https://example.com'},
+    parameters: [
+      ParameterDefinition(
+        key: 'method',
+        label: 'HTTP Method',
+        type: ParameterType.enumType,
+        options: ['GET', 'POST', 'PUT', 'DELETE'],
+        defaultValue: 'GET',
+      ),
+      ParameterDefinition(
+        key: 'url',
+        label: 'URL',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'headers',
+        label: 'Headers (JSON)',
+        type: ParameterType.string,
+      ),
+      ParameterDefinition(
+        key: 'body',
+        label: 'Body',
+        type: ParameterType.string,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'network.request',
@@ -295,6 +384,27 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'method': 'GET', 'url_from_input': true, 'timeout_ms': 12000},
+    parameters: [
+      ParameterDefinition(
+        key: 'method',
+        label: 'HTTP Method',
+        type: ParameterType.enumType,
+        options: ['GET', 'POST', 'PUT', 'DELETE'],
+        defaultValue: 'GET',
+      ),
+      ParameterDefinition(
+        key: 'url_from_input',
+        label: 'URL from Input',
+        type: ParameterType.boolean,
+        defaultValue: true,
+      ),
+      ParameterDefinition(
+        key: 'timeout_ms',
+        label: 'Timeout (ms)',
+        type: ParameterType.number,
+        defaultValue: 12000,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'text.summarize',
@@ -304,6 +414,26 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'source': 'http_body', 'max_sentences': 5, 'language': 'ko'},
+    parameters: [
+      ParameterDefinition(
+        key: 'source',
+        label: 'Source Variable',
+        type: ParameterType.string,
+        defaultValue: 'http_body',
+      ),
+      ParameterDefinition(
+        key: 'max_sentences',
+        label: 'Max Sentences',
+        type: ParameterType.number,
+        defaultValue: 5,
+      ),
+      ParameterDefinition(
+        key: 'language',
+        label: 'Language',
+        type: ParameterType.string,
+        defaultValue: 'ko',
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'transform.regex_clean',
@@ -358,6 +488,14 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {'output_uri': 'sandbox://captures/photo_{{metadata.run_id}}.jpg'},
+    parameters: [
+      ParameterDefinition(
+        key: 'output_uri',
+        label: 'Output URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'webcam.capture',
@@ -367,6 +505,14 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {'output_uri': 'sandbox://captures/webcam_{{metadata.run_id}}.jpg'},
+    parameters: [
+      ParameterDefinition(
+        key: 'output_uri',
+        label: 'Output URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'microphone.record',
@@ -376,6 +522,20 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {'max_seconds': 3, 'output_uri': 'sandbox://captures/audio_{{metadata.run_id}}.wav'},
+    parameters: [
+      ParameterDefinition(
+        key: 'max_seconds',
+        label: 'Max Seconds',
+        type: ParameterType.number,
+        defaultValue: 3,
+      ),
+      ParameterDefinition(
+        key: 'output_uri',
+        label: 'Output URI',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'health.read',
@@ -394,6 +554,14 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'command': 'git pull'},
+    parameters: [
+      ParameterDefinition(
+        key: 'command',
+        label: 'Command',
+        type: ParameterType.string,
+        required: true,
+      ),
+    ],
   ),
   ActionDefinition(
     type: 'recipe.run',
@@ -403,6 +571,33 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'recipe_id': '', 'when': 'on_success'},
+    parameters: [
+      ParameterDefinition(
+        key: 'recipe_id',
+        label: 'Recipe ID',
+        type: ParameterType.string,
+        required: true,
+      ),
+      ParameterDefinition(
+        key: 'when',
+        label: 'When to Run',
+        type: ParameterType.enumType,
+        options: ['on_success', 'on_failure', 'always'],
+        defaultValue: 'on_success',
+      ),
+      ParameterDefinition(
+        key: 'delay_ms',
+        label: 'Delay (ms)',
+        type: ParameterType.number,
+        defaultValue: 0,
+      ),
+      ParameterDefinition(
+        key: 'max_depth',
+        label: 'Max Depth',
+        type: ParameterType.number,
+        defaultValue: 5,
+      ),
+    ],
   ),
 ];
 
