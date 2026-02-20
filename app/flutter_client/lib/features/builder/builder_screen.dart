@@ -362,7 +362,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
                     .map(
                       (trigger) => FilterChip(
                         label: Text('${trigger.label} (${trigger.type})'),
-                        selected: store.draftTriggerTypes.contains(trigger.type),
+                        selected: store.draftTriggers.any((t) => t.type == trigger.type),
                         onSelected: (_) => store.toggleDraftTriggerSelection(trigger.type),
                       ),
                     )
@@ -392,7 +392,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
                 runSpacing: 8,
                 children: filteredActionCatalog.map((action) {
                   final actionType = action.type;
-                  final selected = store.draftActions.contains(actionType);
+                  final selected = store.draftActions.any((a) => a.type == actionType);
                   return FilterChip(
                     label: Text('${action.label} (${action.type})'),
                     selected: selected,
@@ -406,13 +406,12 @@ class _BuilderScreenState extends State<BuilderScreen> {
               if (store.draftActions.isEmpty)
                 const Text('Select actions first.')
               else
-                ...store.draftActions.map((actionType) {
-                  final params =
-                      store.draftActionParams[actionType] ?? const <String, dynamic>{};
+                ...store.draftActions.map((action) {
+                  final params = action.params;
                   if (params.isEmpty) {
                     return Card(
                       child: ListTile(
-                        title: Text(actionType),
+                        title: Text(action.type),
                         subtitle: const Text('No editable params'),
                       ),
                     );
@@ -423,13 +422,13 @@ class _BuilderScreenState extends State<BuilderScreen> {
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text(actionType, style: Theme.of(context).textTheme.titleMedium),
+                          Text(action.type, style: Theme.of(context).textTheme.titleMedium),
                           const SizedBox(height: 8),
                           ...params.entries.map(
                             (entry) => Padding(
                               padding: const EdgeInsets.only(bottom: 8),
                               child: TextFormField(
-                                key: ValueKey('$actionType.${entry.key}'),
+                                key: ValueKey('${action.id}.${entry.key}'),
                                 initialValue: entry.value.toString(),
                                 decoration: InputDecoration(
                                   labelText: entry.key,
@@ -437,7 +436,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
                                 ),
                                 onChanged: (value) {
                                   store.updateDraftActionParam(
-                                    actionType,
+                                    action.id,
                                     entry.key,
                                     value,
                                   );
@@ -470,7 +469,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
                 child: ListTile(
                   title: const Text('Current Draft Summary'),
                   subtitle: Text(
-                    'Triggers (${store.draftTriggerMode}): ${store.draftTriggerTypes.join(', ')}\nActions: ${store.draftActions.join(', ')}\nWorkspace: ${store.workspaceScope}',
+                    'Triggers (${store.draftTriggerMode}): ${store.draftTriggers.map((t) => t.type).join(', ')}\nActions: ${store.draftActions.map((a) => a.type).join(', ')}\nWorkspace: ${store.workspaceScope}',
                   ),
                 ),
               ),

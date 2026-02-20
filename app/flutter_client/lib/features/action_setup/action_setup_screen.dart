@@ -79,7 +79,7 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
               const SizedBox(height: 8),
               ...filteredActions.map((action) {
                 final type = action.type;
-                final selected = store.draftActions.contains(type);
+                final selected = store.draftActions.any((a) => a.type == type);
                 return CheckboxListTile(
                   value: selected,
                   onChanged: (_) => store.toggleDraftAction(type),
@@ -94,12 +94,12 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
               const Divider(height: 24),
               const Text('Selected action parameters'),
               const SizedBox(height: 8),
-              ...store.draftActions.map((actionType) {
-                final params = store.draftActionParams[actionType] ?? const <String, dynamic>{};
+              ...store.draftActions.map((action) {
+                final params = action.params;
                 if (params.isEmpty) {
                   return Card(
                     child: ListTile(
-                      title: Text(actionType),
+                      title: Text(action.type),
                       subtitle: const Text('No editable params'),
                     ),
                   );
@@ -110,20 +110,20 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(actionType, style: Theme.of(context).textTheme.titleMedium),
+                        Text(action.type, style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
                         ...params.entries.map(
                           (entry) => Padding(
                             padding: const EdgeInsets.only(bottom: 8),
                             child: TextFormField(
-                              key: ValueKey('$actionType.${entry.key}'),
+                              key: ValueKey('${action.id}.${entry.key}'),
                               initialValue: entry.value.toString(),
                               decoration: InputDecoration(
                                 labelText: entry.key,
                                 border: const OutlineInputBorder(),
                               ),
                               onChanged: (value) {
-                                store.updateDraftActionParam(actionType, entry.key, value);
+                                store.updateDraftActionParam(action.id, entry.key, value);
                               },
                             ),
                           ),
@@ -134,7 +134,7 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
                 );
               }),
               const SizedBox(height: 8),
-              Text('Selected: ${store.draftActions.join(', ')}'),
+              Text('Selected: ${store.draftActions.map((a) => a.type).join(', ')}'),
             ],
           );
         },

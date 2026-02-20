@@ -16,7 +16,7 @@ class TriggerSetupScreen extends StatelessWidget {
         animation: store,
         builder: (context, _) {
           final sensitive = store.draftRiskLevel == 'Sensitive';
-          final selected = store.draftTriggerTypes;
+          final selected = store.draftTriggers.map((t) => t.type).toSet();
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -77,7 +77,7 @@ class TriggerSetupScreen extends StatelessWidget {
                 );
               }),
               const SizedBox(height: 8),
-              Text('Current triggers: ${store.draftTriggerTypes.join(', ')}'),
+              Text('Current triggers: ${store.draftTriggers.map((t) => t.type).join(', ')}'),
             ],
           );
         },
