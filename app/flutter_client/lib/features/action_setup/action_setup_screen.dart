@@ -178,6 +178,54 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
                             );
                           }
                         }),
+                        if (def.outputs.isNotEmpty) ...[
+                          const SizedBox(height: 16),
+                          Row(
+                            children: const [
+                              Icon(Icons.output, size: 16, color: Colors.blueGrey),
+                              SizedBox(width: 4),
+                              Text('Generates Variables:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                            ],
+                          ),
+                          const SizedBox(height: 8),
+                          Container(
+                            width: double.infinity,
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: Colors.blueGrey.withOpacity(0.05),
+                              borderRadius: BorderRadius.circular(4),
+                              border: Border.all(color: Colors.blueGrey.withOpacity(0.2)),
+                            ),
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: def.outputs.entries.map((e) => Padding(
+                                padding: const EdgeInsets.only(bottom: 4),
+                                child: SelectableText.rich(
+                                  TextSpan(
+                                    children: [
+                                      const TextSpan(
+                                        text: '{{state.',
+                                        style: TextStyle(fontFamily: 'Courier', fontSize: 13, color: Colors.black87),
+                                      ),
+                                      TextSpan(
+                                        text: e.key,
+                                        style: const TextStyle(fontFamily: 'Courier', fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue),
+                                      ),
+                                      const TextSpan(
+                                        text: '}}',
+                                        style: TextStyle(fontFamily: 'Courier', fontSize: 13, color: Colors.black87),
+                                      ),
+                                      TextSpan(
+                                        text: ' : ${e.value}',
+                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
+                                      ),
+                                    ],
+                                  ),
+                                ),
+                              )).toList(),
+                            ),
+                          ),
+                        ],
                       ],
                     ),
                   ),

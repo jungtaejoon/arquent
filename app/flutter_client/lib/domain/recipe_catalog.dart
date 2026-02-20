@@ -52,6 +52,7 @@ class ActionDefinition {
     required this.supportedLocally,
     required this.defaultParams,
     this.parameters = const [],
+    this.outputs = const {},
   });
 
   final String type;
@@ -62,6 +63,7 @@ class ActionDefinition {
   final bool supportedLocally;
   final Map<String, dynamic> defaultParams;
   final List<ParameterDefinition> parameters;
+  final Map<String, String> outputs;
 }
 
 class RecipeTemplateDefinition {
@@ -232,6 +234,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'title': 'Automation done', 'body': 'Run {{metadata.run_id}} finished.'},
+    outputs: const {
+      'last_notification': 'The notification that was just sent (includes title/body)',
+    },
     parameters: [
       ParameterDefinition(
         key: 'title',
@@ -255,6 +260,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'uri': 'sandbox://notes/{{metadata.run_id}}.txt', 'content': 'Created from Builder'},
+    outputs: const {
+      'last_file_uri': 'The URI of the file that was written',
+    },
     parameters: [
       ParameterDefinition(
         key: 'uri',
@@ -278,6 +286,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'uri': 'sandbox://notes/source.txt', 'destination': 'sandbox://archive/target.txt'},
+    outputs: const {
+      'last_file_uri': 'The new URI of the moved file',
+    },
     parameters: [
       ParameterDefinition(
         key: 'uri',
@@ -301,6 +312,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'uri': 'sandbox://notes/source.txt', 'new_name': 'renamed.txt'},
+    outputs: const {
+      'last_file_uri': 'The new URI of the renamed file',
+    },
     parameters: [
       ParameterDefinition(
         key: 'uri',
@@ -324,6 +338,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'text': 'Copied from automation run'},
+    outputs: const {
+      'clipboard_text': 'The text that was written to clipboard',
+    },
     parameters: [
       ParameterDefinition(
         key: 'text',
@@ -341,6 +358,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'clipboard_text': 'The text read from clipboard',
+    },
   ),
   ActionDefinition(
     type: 'http.request',
@@ -350,6 +370,11 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'method': 'GET', 'url': 'https://example.com'},
+    outputs: const {
+      'http_status': 'Response status code (e.g. 200)',
+      'http_body': 'Response body text',
+      'http_error': 'Error message if failed',
+    },
     parameters: [
       ParameterDefinition(
         key: 'method',
@@ -384,6 +409,11 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'method': 'GET', 'url_from_input': true, 'timeout_ms': 12000},
+    outputs: const {
+      'http_status': 'Response status code (e.g. 200)',
+      'http_body': 'Response body text',
+      'http_error': 'Error message if failed',
+    },
     parameters: [
       ParameterDefinition(
         key: 'method',
@@ -414,6 +444,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'source': 'http_body', 'max_sentences': 5, 'language': 'ko'},
+    outputs: const {
+      'summary': 'The summarized text',
+    },
     parameters: [
       ParameterDefinition(
         key: 'source',
@@ -443,6 +476,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'cleaned_text': 'Text with whitespace normalized',
+    },
   ),
   ActionDefinition(
     type: 'transform.ocr_text',
@@ -452,6 +488,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'ocr_text': 'Text detected in the image',
+    },
   ),
   ActionDefinition(
     type: 'transform.ocr_receipt',
@@ -461,6 +500,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'expense_csv_line': 'Parsed receipt data (date, item, price)',
+    },
   ),
   ActionDefinition(
     type: 'transform.speech_to_text',
@@ -470,6 +512,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'transcript': 'Transcribed text from audio',
+    },
   ),
   ActionDefinition(
     type: 'transform.qr_decode',
@@ -479,6 +524,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'decoded_qr': 'Decoded content from QR code',
+    },
   ),
   ActionDefinition(
     type: 'camera.capture',
@@ -488,6 +536,10 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {'output_uri': 'sandbox://captures/photo_{{metadata.run_id}}.jpg'},
+    outputs: const {
+      'capture_uri': 'Resolved URI where photo was saved',
+      'capture_source': 'Original source path from device',
+    },
     parameters: [
       ParameterDefinition(
         key: 'output_uri',
@@ -505,6 +557,10 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {'output_uri': 'sandbox://captures/webcam_{{metadata.run_id}}.jpg'},
+    outputs: const {
+       'capture_uri': 'Resolved URI where photo was saved',
+       'capture_source': 'Original source path from device',
+    },
     parameters: [
       ParameterDefinition(
         key: 'output_uri',
@@ -522,6 +578,10 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {'max_seconds': 3, 'output_uri': 'sandbox://captures/audio_{{metadata.run_id}}.wav'},
+    outputs: const {
+       'record_uri': 'Resolved URI where audio was saved',
+       'record_source': 'Original source path from device',
+    },
     parameters: [
       ParameterDefinition(
         key: 'max_seconds',
@@ -545,6 +605,10 @@ const actionCatalog = <ActionDefinition>[
     sensitive: true,
     supportedLocally: true,
     defaultParams: {},
+    outputs: const {
+      'sleep_hours': 'Daily sleep hours',
+      'steps': 'Daily step count',
+    },
   ),
   ActionDefinition(
     type: 'command.execute_allowlist',
@@ -554,6 +618,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'command': 'git pull'},
+    outputs: const {
+      'command_output': 'Output of the command',
+    },
     parameters: [
       ParameterDefinition(
         key: 'command',
@@ -571,6 +638,9 @@ const actionCatalog = <ActionDefinition>[
     sensitive: false,
     supportedLocally: true,
     defaultParams: {'recipe_id': '', 'when': 'on_success'},
+    outputs: const {
+      'chain_recipe_id': 'Next recipe ID to run',
+    },
     parameters: [
       ParameterDefinition(
         key: 'recipe_id',
