@@ -1,15 +1,45 @@
+enum ParameterType {
+  string,
+  number,
+  boolean,
+  enumType,
+  list,
+}
+
+class ParameterDefinition {
+  const ParameterDefinition({
+    required this.key,
+    required this.label,
+    required this.type,
+    this.description,
+    this.required = false,
+    this.defaultValue,
+    this.options,
+  });
+
+  final String key;
+  final String label;
+  final ParameterType type;
+  final String? description;
+  final bool required;
+  final dynamic defaultValue;
+  final List<String>? options;
+}
+
 class TriggerDefinition {
   const TriggerDefinition({
     required this.type,
     required this.label,
     required this.guide,
     required this.userInitiated,
+    this.parameters = const [],
   });
 
   final String type;
   final String label;
   final String guide;
   final bool userInitiated;
+  final List<ParameterDefinition> parameters;
 }
 
 class ActionDefinition {
@@ -21,6 +51,7 @@ class ActionDefinition {
     required this.sensitive,
     required this.supportedLocally,
     required this.defaultParams,
+    this.parameters = const [],
   });
 
   final String type;
@@ -30,6 +61,7 @@ class ActionDefinition {
   final bool sensitive;
   final bool supportedLocally;
   final Map<String, dynamic> defaultParams;
+  final List<ParameterDefinition> parameters;
 }
 
 class RecipeTemplateDefinition {

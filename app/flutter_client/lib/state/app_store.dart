@@ -17,31 +17,26 @@ class RecipeDraft {
     required this.recipeId,
     required this.riskLevel,
     required this.triggerType,
-    required Set<String> triggerTypes,
+    required List<RecipeTrigger> triggers,
     required this.triggerMode,
-    required Set<String> actions,
+    required List<RecipeAction> actions,
     required Set<String> tags,
-    required Map<String, Map<String, dynamic>> actionParams,
-  })  : actions = Set<String>.from(actions),
-        triggerTypes = Set<String>.from(triggerTypes),
+  })  : actions = List<RecipeAction>.from(actions),
+        triggers = List<RecipeTrigger>.from(triggers),
         tags = Set<String>.from(tags),
-      usageSteps = List<String>.from(usageSteps),
-        actionParams = actionParams.map(
-          (key, value) => MapEntry(key, Map<String, dynamic>.from(value)),
-        );
+        usageSteps = List<String>.from(usageSteps);
 
   String name;
   DateTime updatedAt;
-    String description;
-    final List<String> usageSteps;
+  String description;
+  final List<String> usageSteps;
   String recipeId;
   String riskLevel;
   String triggerType;
-  final Set<String> triggerTypes;
+  final List<RecipeTrigger> triggers;
   String triggerMode;
-  final Set<String> actions;
+  final List<RecipeAction> actions;
   final Set<String> tags;
-  final Map<String, Map<String, dynamic>> actionParams;
 
   RecipeDraft copy() {
     return RecipeDraft(
@@ -52,11 +47,10 @@ class RecipeDraft {
       recipeId: recipeId,
       riskLevel: riskLevel,
       triggerType: triggerType,
-      triggerTypes: triggerTypes,
+      triggers: triggers.map((t) => t.copy()).toList(),
       triggerMode: triggerMode,
-      actions: actions,
+      actions: actions.map((a) => a.copy()).toList(),
       tags: tags,
-      actionParams: actionParams,
     );
   }
 
@@ -73,16 +67,25 @@ class RecipeDraft {
       recipeId: 'local.custom.recipe',
       riskLevel: 'Standard',
       triggerType: 'trigger.manual',
-      triggerTypes: {'trigger.manual'},
+      triggers: [
+        RecipeTrigger(
+          id: 'trigger_1',
+          type: 'trigger.manual',
+          params: {},
+        ),
+      ],
       triggerMode: 'any',
-      actions: {'notification.send'},
+      actions: [
+        RecipeAction(
+          id: 'action_1',
+          type: 'notification.send',
+          params: {
+            'title': 'Automation done',
+            'body': 'Run {{metadata.run_id}} finished.',
+          },
+        ),
+      ],
       tags: {},
-      actionParams: {
-        'notification.send': {
-          'title': 'Automation done',
-          'body': 'Run {{metadata.run_id}} finished.',
-        },
-      },
     );
   }
 }
@@ -141,10 +144,9 @@ class AppStore extends ChangeNotifier {
   String get draftUsageText => _activeDraft.usageSteps.join('\n');
   String get draftRiskLevel => _activeDraft.riskLevel;
   String get draftTriggerType => _activeDraft.triggerType;
-  Set<String> get draftTriggerTypes => _activeDraft.triggerTypes;
+  List<RecipeTrigger> get draftTriggers => _activeDraft.triggers;
   String get draftTriggerMode => _activeDraft.triggerMode;
-  Set<String> get draftActions => _activeDraft.actions;
-  Map<String, Map<String, dynamic>> get draftActionParams => _activeDraft.actionParams;
+  List<RecipeAction> get draftActions => _activeDraft.actions;
   List<RecipeTemplateDefinition> get availableTemplates => recipeTemplates;
 
   Future<void> publishDemoRecipe() async {
@@ -255,9 +257,12 @@ class AppStore extends ChangeNotifier {
 
   void updateDraftTrigger(String value) {
     _activeDraft.triggerType = value;
-    _activeDraft.triggerTypes
-      ..clear()
-      ..add(value);
+    _activeDraft.triggers.clear();
+    _activeDraft.triggers.add(RecipeTrigger(
+      id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
+      type: value,
+      params: {},
+    ));
     _activeDraft.triggerMode = 'any';
     _touchActiveDraft();
     notifyListeners();
@@ -265,15 +270,24 @@ class AppStore extends ChangeNotifier {
 
   void toggleDraftTriggerSelection(String triggerType) {
     final draft = _activeDraft;
-    if (draft.triggerTypes.contains(triggerType)) {
-      draft.triggerTypes.remove(triggerType);
+    final existingIndex = draft.triggers.indexWhere((t) => t.type == triggerType);
+    if (existingIndex >= 0) {
+      draft.triggers.removeAt(existingIndex);
     } else {
-      draft.triggerTypes.add(triggerType);
+      draft.triggers.add(RecipeTrigger(
+        id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
+        type: triggerType,
+        params: {},
+      ));
     }
-    if (draft.triggerTypes.isEmpty) {
-      draft.triggerTypes.add('trigger.manual');
+    if (draft.triggers.isEmpty) {
+      draft.triggers.add(RecipeTrigger(
+        id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'trigger.manual',
+        params: {},
+      ));
     }
-    draft.triggerType = draft.triggerTypes.first;
+    draft.triggerType = draft.triggers.first.type;
     _touchActiveDraft();
     notifyListeners();
   }
@@ -303,27 +317,31 @@ class AppStore extends ChangeNotifier {
       ..addAll(template.usageSteps);
     _activeDraft.riskLevel = template.riskLevel;
     _activeDraft.triggerType = template.triggerType;
-    _activeDraft.triggerTypes
-      ..clear()
-      ..add(template.triggerType);
+    _activeDraft.triggers.clear();
+    _activeDraft.triggers.add(RecipeTrigger(
+      id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
+      type: template.triggerType,
+      params: {},
+    ));
     _activeDraft.triggerMode = 'any';
-    _activeDraft.actions
-      ..clear()
-      ..addAll(template.actions);
+    
+    _activeDraft.actions.clear();
+    for (var i = 0; i < template.actions.length; i++) {
+      final actionType = template.actions[i];
+      final defaults = _defaultParamsForAction(actionType);
+      final overrides = template.actionParamOverrides[actionType] ?? const {};
+      final merged = Map<String, dynamic>.from(defaults)..addAll(overrides);
+      
+      _activeDraft.actions.add(RecipeAction(
+        id: 'action_${DateTime.now().millisecondsSinceEpoch}_$i',
+        type: actionType,
+        params: merged,
+      ));
+    }
+
     _activeDraft.tags
       ..clear()
       ..addAll(template.tags.map((tag) => tag.toLowerCase()));
-
-    _activeDraft.actionParams
-      ..clear()
-      ..addEntries(
-        template.actions.map((actionType) {
-          final defaults = _defaultParamsForAction(actionType);
-          final overrides = template.actionParamOverrides[actionType] ?? const {};
-          final merged = Map<String, dynamic>.from(defaults)..addAll(overrides);
-          return MapEntry(actionType, merged);
-        }),
-      );
 
     if (_activeDraft.recipeId == 'local.custom.recipe' || _activeDraft.recipeId.trim().isEmpty) {
       _activeDraft.recipeId = template.id.replaceAll('template.', 'local.');
@@ -339,7 +357,7 @@ class AppStore extends ChangeNotifier {
     _drafts[key] = duplicateCurrent
         ? _activeDraft.copy()
         : RecipeDraft(
-          name: 'Draft $_draftSequence',
+            name: 'Draft $_draftSequence',
             updatedAt: DateTime.now(),
             description: 'Quick personal automation recipe.',
             usageSteps: const [
@@ -350,16 +368,25 @@ class AppStore extends ChangeNotifier {
             recipeId: 'local.custom.recipe',
             riskLevel: 'Standard',
             triggerType: 'trigger.manual',
-            triggerTypes: {'trigger.manual'},
+            triggers: [
+              RecipeTrigger(
+                id: 'trigger_${DateTime.now().millisecondsSinceEpoch}',
+                type: 'trigger.manual',
+                params: {},
+              ),
+            ],
             triggerMode: 'any',
-            actions: {'notification.send'},
+            actions: [
+              RecipeAction(
+                id: 'action_${DateTime.now().millisecondsSinceEpoch}',
+                type: 'notification.send',
+                params: {
+                  'title': 'Automation done',
+                  'body': 'Run {{metadata.run_id}} finished.',
+                },
+              ),
+            ],
             tags: {},
-            actionParams: {
-              'notification.send': {
-                'title': 'Automation done',
-                'body': 'Run {{metadata.run_id}} finished.',
-              },
-            },
           );
     if (duplicateCurrent) {
       _drafts[key]!.name = '${_activeDraft.name} Copy';
@@ -371,11 +398,7 @@ class AppStore extends ChangeNotifier {
   }
 
   void renameActiveDraft(String value) {
-    final normalized = value.trim();
-    if (normalized.isEmpty) {
-      return;
-    }
-    _activeDraft.name = normalized;
+    _activeDraft.name = value.trim();
     _touchActiveDraft();
     notifyListeners();
   }
@@ -438,34 +461,37 @@ class AppStore extends ChangeNotifier {
 
   void toggleDraftAction(String actionType) {
     final draft = _activeDraft;
-    if (draft.actions.contains(actionType)) {
-      draft.actions.remove(actionType);
+    final existingIndex = draft.actions.indexWhere((a) => a.type == actionType);
+    if (existingIndex >= 0) {
+      draft.actions.removeWhere((a) => a.type == actionType);
     } else {
-      draft.actions.add(actionType);
-      draft.actionParams.putIfAbsent(actionType, () => _defaultParamsForAction(actionType));
+      draft.actions.add(RecipeAction(
+        id: 'action_${DateTime.now().millisecondsSinceEpoch}',
+        type: actionType,
+        params: _defaultParamsForAction(actionType),
+      ));
     }
     if (draft.actions.isEmpty) {
-      draft.actions.add('notification.send');
-      draft.actionParams.putIfAbsent(
-        'notification.send',
-        () => _defaultParamsForAction('notification.send'),
-      );
+      draft.actions.add(RecipeAction(
+        id: 'action_${DateTime.now().millisecondsSinceEpoch}',
+        type: 'notification.send',
+        params: _defaultParamsForAction('notification.send'),
+      ));
     }
-    draft.actionParams.removeWhere((key, _) => !draft.actions.contains(key));
     _touchActiveDraft();
     notifyListeners();
   }
 
-  void updateDraftActionParam(String actionType, String key, String value) {
-    final params = _activeDraft.actionParams.putIfAbsent(
-      actionType,
-      () => _defaultParamsForAction(actionType),
-    );
+  void updateDraftActionParam(String actionId, String key, String value) {
+    final actionIndex = _activeDraft.actions.indexWhere((a) => a.id == actionId);
+    if (actionIndex < 0) return;
+    
+    final action = _activeDraft.actions[actionIndex];
     if (key == 'max_seconds') {
       final parsed = int.tryParse(value.trim());
-      params[key] = parsed ?? 1;
+      action.params[key] = parsed ?? 1;
     } else {
-      params[key] = value;
+      action.params[key] = value;
     }
     _touchActiveDraft();
     notifyListeners();
@@ -503,12 +529,12 @@ class AppStore extends ChangeNotifier {
   }
 
   Map<String, dynamic> buildDraftFlow() {
-    final triggers = _activeDraft.triggerTypes.toList()..sort();
+    final triggers = _activeDraft.triggers.map((t) => t.type).toList()..sort();
     return {
       'trigger': {'trigger_type': _activeDraft.triggerType},
       'triggers': triggers,
       'trigger_mode': _activeDraft.triggerMode,
-      'actions': _buildActions(_activeDraft.actions.toList()),
+      'actions': _buildActions(_activeDraft.actions),
     };
   }
 
@@ -677,13 +703,9 @@ class AppStore extends ChangeNotifier {
     }
   }
 
-  List<Map<String, dynamic>> _buildActions(List<String> actionTypes) {
-    final actionParams = _activeDraft.actionParams;
-    return actionTypes.map((type) {
-      final params = Map<String, dynamic>.from(
-        actionParams[type] ?? _defaultParamsForAction(type),
-      );
-      return {'action_type': type, 'params': params};
+  List<Map<String, dynamic>> _buildActions(List<RecipeAction> actions) {
+    return actions.map((action) {
+      return {'action_type': action.type, 'params': action.params};
     }).toList();
   }
 

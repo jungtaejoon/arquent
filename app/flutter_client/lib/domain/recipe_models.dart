@@ -78,3 +78,75 @@ class ExecutionLogEntry {
   final DateTime timestamp;
   final String detail;
 }
+
+class RecipeAction {
+  RecipeAction({
+    required this.id,
+    required this.type,
+    required this.params,
+  });
+
+  final String id;
+  final String type;
+  final Map<String, dynamic> params;
+
+  RecipeAction copy() {
+    return RecipeAction(
+      id: id,
+      type: type,
+      params: Map<String, dynamic>.from(params),
+    );
+  }
+
+  factory RecipeAction.fromJson(Map<String, dynamic> json) {
+    return RecipeAction(
+      id: json['id'] as String? ?? '',
+      type: json['type'] as String? ?? '',
+      params: json['params'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'params': params,
+    };
+  }
+}
+
+class RecipeTrigger {
+  RecipeTrigger({
+    required this.id,
+    required this.type,
+    required this.params,
+  });
+
+  final String id;
+  final String type;
+  final Map<String, dynamic> params;
+
+  RecipeTrigger copy() {
+    return RecipeTrigger(
+      id: id,
+      type: type,
+      params: Map<String, dynamic>.from(params),
+    );
+  }
+
+  factory RecipeTrigger.fromJson(Map<String, dynamic> json) {
+    return RecipeTrigger(
+      id: json['id'] as String? ?? '',
+      type: json['type'] as String? ?? '',
+      params: json['params'] as Map<String, dynamic>? ?? {},
+    );
+  }
+
+  Map<String, dynamic> toJson() {
+    return {
+      'id': id,
+      'type': type,
+      'params': params,
+    };
+  }
+}
