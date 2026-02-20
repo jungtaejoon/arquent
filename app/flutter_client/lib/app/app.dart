@@ -7,6 +7,7 @@ import '../features/execution_logs/execution_logs_screen.dart';
 import '../features/import_export/import_export_screen.dart';
 import '../features/marketplace/marketplace_screen.dart';
 import '../features/permission_review/permission_review_screen.dart';
+import '../features/recipe_state/recipe_state_screen.dart';
 import '../features/scenario_lab/scenario_lab_screen.dart';
 import '../features/trigger_setup/trigger_setup_screen.dart';
 import '../features/workspace/workspace_screen.dart';
@@ -18,6 +19,7 @@ class AppRoutes {
   static const actionSetup = '/action-setup';
   static const permissionReview = '/permission-review';
   static const executionLogs = '/execution-logs';
+  static const recipeState = '/recipe-state';
   static const importExport = '/import-export';
   static const workspace = '/workspace';
   static const marketplace = '/marketplace';
@@ -40,6 +42,7 @@ class AutomationApp extends StatelessWidget {
         AppRoutes.actionSetup: (_) => const ActionSetupScreen(),
         AppRoutes.permissionReview: (_) => const PermissionReviewScreen(),
         AppRoutes.executionLogs: (_) => const ExecutionLogsScreen(),
+        AppRoutes.recipeState: (_) => const RecipeStateScreen(),
         AppRoutes.importExport: (_) => const ImportExportScreen(),
         AppRoutes.workspace: (_) => const WorkspaceScreen(),
         AppRoutes.marketplace: (_) => const MarketplaceScreen(),
