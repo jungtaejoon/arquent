@@ -6,16 +6,21 @@ class AppScaffoldShell extends StatelessWidget {
   const AppScaffoldShell({
     required this.title,
     required this.body,
+    this.bottom,
     super.key,
   });
 
   final String title;
   final Widget body;
+  final PreferredSizeWidget? bottom;
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(title: Text(title)),
+      appBar: AppBar(
+        title: Text(title),
+        bottom: bottom,
+      ),
       drawer: Drawer(
         child: ListView(
           children: [
