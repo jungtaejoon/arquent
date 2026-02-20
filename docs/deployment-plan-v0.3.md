@@ -83,7 +83,30 @@ Cloudflare Pages build settings (if using Git integration):
 - Marketplace publish/refresh/install/run tested once on production URL
 - Sensitive recipe policy still enforced (user-initiated gate)
 
-## 6) User input needed
+## 6) Staging + production strategy (recommended)
+
+- Branches:
+	- `staging` → staging deployment validation
+	- `main` → production deployment
+- GitHub Actions behavior (`.github/workflows/ci.yml`):
+	- Pull Request: tests only
+	- Push to `staging`/`main`: tests + build
+	- Push to `staging`: staging smoke test
+	- Push to `main`: production smoke test
+
+Required GitHub Repository Variables:
+
+- `STAGING_API_URL`
+- `STAGING_WEB_URL`
+- `PROD_API_URL`
+- `PROD_WEB_URL`
+
+Smoke test checks:
+
+- API `GET /marketplace/recipes` returns success
+- Web domain returns successful HTTP headers
+
+## 7) User input needed
 
 Please provide these 2 values so I can complete final production wiring:
 
