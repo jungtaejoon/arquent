@@ -292,7 +292,7 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateDraftTriggerParam(String triggerId, String key, String value) {
+  void updateDraftTriggerParam(String triggerId, String key, dynamic value) {
     final triggerIndex = _activeDraft.triggers.indexWhere((t) => t.id == triggerId);
     if (triggerIndex < 0) return;
     
@@ -492,17 +492,12 @@ class AppStore extends ChangeNotifier {
     notifyListeners();
   }
 
-  void updateDraftActionParam(String actionId, String key, String value) {
+  void updateDraftActionParam(String actionId, String key, dynamic value) {
     final actionIndex = _activeDraft.actions.indexWhere((a) => a.id == actionId);
     if (actionIndex < 0) return;
     
     final action = _activeDraft.actions[actionIndex];
-    if (key == 'max_seconds') {
-      final parsed = int.tryParse(value.trim());
-      action.params[key] = parsed ?? 1;
-    } else {
-      action.params[key] = value;
-    }
+    action.params[key] = value;
     _touchActiveDraft();
     notifyListeners();
   }

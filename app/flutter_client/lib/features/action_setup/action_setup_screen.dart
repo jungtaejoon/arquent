@@ -95,8 +95,9 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
               const Text('Selected action parameters'),
               const SizedBox(height: 8),
               ...store.draftActions.map((action) {
+                final def = actionDefinitionByType(action.type);
                 final params = action.params;
-                if (params.isEmpty) {
+                if (def == null || def.parameters.isEmpty) {
                   return Card(
                     child: ListTile(
                       title: Text(action.type),
@@ -112,22 +113,71 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
                       children: [
                         Text(action.type, style: Theme.of(context).textTheme.titleMedium),
                         const SizedBox(height: 8),
-                        ...params.entries.map(
-                          (entry) => Padding(
-                            padding: const EdgeInsets.only(bottom: 8),
-                            child: TextFormField(
-                              key: ValueKey('${action.id}.${entry.key}'),
-                              initialValue: entry.value.toString(),
-                              decoration: InputDecoration(
-                                labelText: entry.key,
-                                border: const OutlineInputBorder(),
+                        ...def.parameters.map((paramDef) {
+                          final currentValue = params[paramDef.key] ?? paramDef.defaultValue ?? '';
+                          
+                          if (paramDef.type == ParameterType.boolean) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: SwitchListTile(
+                                title: Text(paramDef.label),
+                                value: currentValue == true || currentValue == 'true',
+                                onChanged: (value) {
+                                  store.updateDraftActionParam(action.id, paramDef.key, value);
+                                },
                               ),
-                              onChanged: (value) {
-                                store.updateDraftActionParam(action.id, entry.key, value);
-                              },
-                            ),
-                          ),
-                        ),
+                            );
+                          } else if (paramDef.type == ParameterType.enumType && paramDef.options != null) {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: DropdownButtonFormField<String>(
+                                value: currentValue.toString(),
+                                decoration: InputDecoration(
+                                  labelText: paramDef.label,
+                                  border: const OutlineInputBorder(),
+                                ),
+                                items: paramDef.options!.map((option) {
+                                  return DropdownMenuItem(
+                                    value: option,
+                                    child: Text(option),
+                                  );
+                                }).toList(),
+                                onChanged: (value) {
+                                  if (value != null) {
+                                    store.updateDraftActionParam(action.id, paramDef.key, value);
+                                  }
+                                },
+                              ),
+                            );
+                          } else {
+                            return Padding(
+                              padding: const EdgeInsets.only(bottom: 8),
+                              child: TextFormField(
+                                key: ValueKey('${action.id}.${paramDef.key}'),
+                                initialValue: currentValue.toString(),
+                                decoration: InputDecoration(
+                                  labelText: paramDef.label + (paramDef.required ? ' *' : ''),
+                                  border: const OutlineInputBorder(),
+                                ),
+                                keyboardType: paramDef.type == ParameterType.number 
+                                    ? TextInputType.number 
+                                    : TextInputType.text,
+                                onChanged: (value) {
+                                  if (paramDef.type == ParameterType.number) {
+                                    final numValue = num.tryParse(value);
+                                    if (numValue != null) {
+                                      store.updateDraftActionParam(action.id, paramDef.key, numValue);
+                                    } else {
+                                      store.updateDraftActionParam(action.id, paramDef.key, value);
+                                    }
+                                  } else {
+                                    store.updateDraftActionParam(action.id, paramDef.key, value);
+                                  }
+                                },
+                              ),
+                            );
+                          }
+                        }),
                       ],
                     ),
                   ),
