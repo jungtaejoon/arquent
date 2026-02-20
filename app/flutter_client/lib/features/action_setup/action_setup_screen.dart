@@ -1,26 +1,40 @@
 import 'package:flutter/material.dart';
 
 import '../../app/scaffold_shell.dart';
+import '../../domain/recipe_catalog.dart';
 import '../../state/app_store.dart';
 
-class ActionSetupScreen extends StatelessWidget {
+class ActionSetupScreen extends StatefulWidget {
   const ActionSetupScreen({super.key});
 
-  static const _actionOptions = [
-    ('notification.send', 'Notification'),
-    ('file.write', 'File Write'),
-    ('clipboard.write', 'Clipboard Write'),
-    ('http.request', 'HTTP Request'),
-    ('camera.capture', 'Camera Capture (Sensitive)'),
-    ('microphone.record', 'Microphone Record (Sensitive)'),
-    ('health.read', 'Health Daily Summary (Sensitive)'),
-  ];
+  @override
+  State<ActionSetupScreen> createState() => _ActionSetupScreenState();
+}
 
-  static const _sensitive = {'camera.capture', 'microphone.record', 'health.read'};
+class _ActionSetupScreenState extends State<ActionSetupScreen> {
+  final TextEditingController _searchController = TextEditingController();
+  String _query = '';
+
+  @override
+  void dispose() {
+    _searchController.dispose();
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
     final store = AppStore.instance;
+    final normalizedQuery = _query.trim().toLowerCase();
+    final filteredActions = actionCatalog.where((action) {
+      if (normalizedQuery.isEmpty) {
+        return true;
+      }
+      return action.type.toLowerCase().contains(normalizedQuery) ||
+          action.label.toLowerCase().contains(normalizedQuery) ||
+          action.category.toLowerCase().contains(normalizedQuery) ||
+          action.guide.toLowerCase().contains(normalizedQuery);
+    }).toList(growable: false);
+
     return AppScaffoldShell(
       title: 'Action Setup',
       body: AnimatedBuilder(
@@ -31,19 +45,50 @@ class ActionSetupScreen extends StatelessWidget {
             children: [
               Text('Active draft: ${store.activeDraftKey}'),
               const SizedBox(height: 8),
-              const Text('Select one or more actions'),
+              const Text('Select one or more actions (search by term/action_type)'),
               const SizedBox(height: 8),
-              ..._actionOptions.map((option) {
-                final type = option.$1;
-                final label = option.$2;
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Guide'),
+                      SizedBox(height: 6),
+                      Text('1) action_type를 그대로 검색하세요. 예: network.request, text.summarize'),
+                      Text('2) 로컬 실행 가능 항목부터 조합한 뒤 민감 액션을 추가하세요.'),
+                      Text('3) 민감 액션은 Sensitive risk + user initiated trigger가 필요합니다.'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _searchController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Search action term',
+                  hintText: 'e.g. http.request, ocr, clipboard',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _query = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+              ...filteredActions.map((action) {
+                final type = action.type;
                 final selected = store.draftActions.contains(type);
                 return CheckboxListTile(
                   value: selected,
                   onChanged: (_) => store.toggleDraftAction(type),
-                  title: Text(label),
-                  subtitle: _sensitive.contains(type)
-                      ? const Text('Requires Sensitive risk + user-initiated trigger')
-                      : null,
+                  title: Text('${action.label} · ${action.type}'),
+                  subtitle: Text(
+                    '${action.category} · ${action.supportedLocally ? 'Local OK' : 'Remote/Planned'}'
+                    '${action.sensitive ? ' · Sensitive' : ''}\n${action.guide}',
+                  ),
+                  isThreeLine: true,
                 );
               }),
               const Divider(height: 24),

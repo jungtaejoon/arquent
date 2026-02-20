@@ -3,6 +3,7 @@ import 'dart:math';
 
 import 'package:flutter/foundation.dart';
 
+import '../domain/recipe_catalog.dart';
 import '../domain/recipe_models.dart';
 import '../runtime/local_runtime.dart';
 import '../services/cloud_api.dart';
@@ -523,51 +524,12 @@ class AppStore extends ChangeNotifier {
       final params = Map<String, dynamic>.from(
         actionParams[type] ?? _defaultParamsForAction(type),
       );
-      switch (type) {
-        case 'file.write':
-          return {'action_type': 'file.write', 'params': params};
-        case 'clipboard.write':
-          return {'action_type': 'clipboard.write', 'params': params};
-        case 'http.request':
-          return {'action_type': 'http.request', 'params': params};
-        case 'camera.capture':
-          return {'action_type': 'camera.capture', 'params': params};
-        case 'microphone.record':
-          return {'action_type': 'microphone.record', 'params': params};
-        case 'health.read':
-          return {'action_type': 'health.read', 'params': params};
-        default:
-          return {'action_type': 'notification.send', 'params': params};
-      }
+      return {'action_type': type, 'params': params};
     }).toList();
   }
 
   Map<String, dynamic> _defaultParamsForAction(String type) {
-    switch (type) {
-      case 'file.write':
-        return {
-          'uri': 'sandbox://notes/{{metadata.run_id}}.txt',
-          'content': 'Created from Builder',
-        };
-      case 'clipboard.write':
-        return {'text': 'Copied from automation run'};
-      case 'http.request':
-        return {'method': 'GET', 'url': 'http://localhost:4000/marketplace/recipes'};
-      case 'camera.capture':
-        return {'output_uri': 'sandbox://captures/photo_{{metadata.run_id}}.jpg'};
-      case 'microphone.record':
-        return {
-          'max_seconds': 3,
-          'output_uri': 'sandbox://captures/audio_{{metadata.run_id}}.wav',
-        };
-      case 'health.read':
-        return {};
-      default:
-        return {
-          'title': 'Automation done',
-          'body': 'Run {{metadata.run_id}} finished.',
-        };
-    }
+    return defaultParamsForActionType(type);
   }
 
   String get _normalizedDraftId {

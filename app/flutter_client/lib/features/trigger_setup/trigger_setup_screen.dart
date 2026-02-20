@@ -1,18 +1,11 @@
 import 'package:flutter/material.dart';
 
 import '../../app/scaffold_shell.dart';
+import '../../domain/recipe_catalog.dart';
 import '../../state/app_store.dart';
 
 class TriggerSetupScreen extends StatelessWidget {
   const TriggerSetupScreen({super.key});
-
-  static const _triggerOptions = [
-    ('trigger.manual', 'Manual Run (recommended for MVP)'),
-    ('trigger.hotkey', 'Hotkey'),
-    ('trigger.widget_tap', 'Widget Tap'),
-    ('trigger.share_sheet', 'Share Sheet'),
-    ('trigger.schedule', 'Schedule (standard-only)'),
-  ];
 
   @override
   Widget build(BuildContext context) {
@@ -31,10 +24,24 @@ class TriggerSetupScreen extends StatelessWidget {
               const SizedBox(height: 8),
               const Text('Choose one trigger for the draft recipe'),
               const SizedBox(height: 8),
-              ..._triggerOptions.map((option) {
-                final value = option.$1;
-                final label = option.$2;
-                final blocked = sensitive && value == 'trigger.schedule';
+              Card(
+                child: Padding(
+                  padding: const EdgeInsets.all(12),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: const [
+                      Text('Guide'),
+                      SizedBox(height: 6),
+                      Text('trigger.* 용어 그대로 선택하면 됩니다.'),
+                      Text('민감 액션 포함 레시피는 user initiated trigger를 쓰세요.'),
+                    ],
+                  ),
+                ),
+              ),
+              const SizedBox(height: 8),
+              ...triggerCatalog.map((trigger) {
+                final value = trigger.type;
+                final blocked = sensitive && !trigger.userInitiated;
                 return RadioListTile<String>(
                   value: value,
                   groupValue: selected,
@@ -45,10 +52,12 @@ class TriggerSetupScreen extends StatelessWidget {
                             store.updateDraftTrigger(next);
                           }
                         },
-                  title: Text(label),
+                  title: Text('${trigger.label} · ${trigger.type}'),
                   subtitle: blocked
                       ? const Text('Sensitive recipes require user-initiated trigger')
-                      : null,
+                      : Text(
+                          '${trigger.userInitiated ? 'User Initiated' : 'Background'} · ${trigger.guide}',
+                        ),
                 );
               }),
               const SizedBox(height: 8),

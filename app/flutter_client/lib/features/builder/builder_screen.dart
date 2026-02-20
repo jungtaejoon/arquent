@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 
 import '../../app/app.dart';
 import '../../app/scaffold_shell.dart';
+import '../../domain/recipe_catalog.dart';
 import '../../state/app_store.dart';
 
 class BuilderScreen extends StatefulWidget {
@@ -14,30 +15,14 @@ class BuilderScreen extends StatefulWidget {
 }
 
 class _BuilderScreenState extends State<BuilderScreen> {
-  static const _triggerOptions = [
-    ('trigger.manual', 'Manual Run'),
-    ('trigger.hotkey', 'Hotkey'),
-    ('trigger.widget_tap', 'Widget Tap'),
-    ('trigger.share_sheet', 'Share Sheet'),
-    ('trigger.schedule', 'Schedule'),
-  ];
-
-  static const _actionOptions = [
-    ('notification.send', 'Notification'),
-    ('file.write', 'File Write'),
-    ('clipboard.write', 'Clipboard Write'),
-    ('http.request', 'HTTP Request'),
-    ('camera.capture', 'Camera Capture'),
-    ('microphone.record', 'Microphone Record'),
-    ('health.read', 'Health Read'),
-  ];
-
   late final TextEditingController _idController;
   late final TextEditingController _draftNameController;
   late final TextEditingController _tagController;
   late final TextEditingController _descriptionController;
   late final TextEditingController _usageController;
+  late final TextEditingController _actionSearchController;
   String? _selectedTagFilter;
+  String _actionSearchQuery = '';
 
   @override
   void initState() {
@@ -47,6 +32,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
     _tagController = TextEditingController();
     _descriptionController = TextEditingController(text: AppStore.instance.draftDescription);
     _usageController = TextEditingController(text: AppStore.instance.draftUsageText);
+    _actionSearchController = TextEditingController();
   }
 
   @override
@@ -56,6 +42,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
     _tagController.dispose();
     _descriptionController.dispose();
     _usageController.dispose();
+    _actionSearchController.dispose();
     super.dispose();
   }
 
@@ -100,6 +87,16 @@ class _BuilderScreenState extends State<BuilderScreen> {
           );
           final updated = store.activeDraftUpdatedAt.toLocal().toIso8601String().replaceFirst('T', ' ');
           final availableTags = store.allDraftTags.toList()..sort();
+          final actionQuery = _actionSearchQuery.trim().toLowerCase();
+          final filteredActionCatalog = actionCatalog.where((action) {
+            if (actionQuery.isEmpty) {
+              return true;
+            }
+            return action.type.toLowerCase().contains(actionQuery) ||
+                action.label.toLowerCase().contains(actionQuery) ||
+                action.category.toLowerCase().contains(actionQuery) ||
+                action.guide.toLowerCase().contains(actionQuery);
+          }).toList(growable: false);
           final filteredDraftKeys = _selectedTagFilter == null
               ? store.draftKeys
               : store.draftKeysByTag(_selectedTagFilter!);
@@ -294,8 +291,13 @@ class _BuilderScreenState extends State<BuilderScreen> {
                 decoration: const InputDecoration(
                   border: OutlineInputBorder(),
                 ),
-                items: _triggerOptions
-                    .map((option) => DropdownMenuItem(value: option.$1, child: Text(option.$2)))
+                items: triggerCatalog
+                    .map(
+                      (trigger) => DropdownMenuItem(
+                        value: trigger.type,
+                        child: Text('${trigger.label} · ${trigger.type}'),
+                      ),
+                    )
                     .toList(),
                 onChanged: (value) {
                   if (value != null) {
@@ -305,15 +307,31 @@ class _BuilderScreenState extends State<BuilderScreen> {
               ),
               const SizedBox(height: 12),
               const Text('Actions'),
+              const SizedBox(height: 6),
+              const Text('검색 예시: network.request, summarize, clipboard'),
+              const SizedBox(height: 8),
+              TextField(
+                controller: _actionSearchController,
+                decoration: const InputDecoration(
+                  border: OutlineInputBorder(),
+                  labelText: 'Search action term',
+                  hintText: 'type or keyword',
+                ),
+                onChanged: (value) {
+                  setState(() {
+                    _actionSearchQuery = value;
+                  });
+                },
+              ),
               const SizedBox(height: 8),
               Wrap(
                 spacing: 8,
                 runSpacing: 8,
-                children: _actionOptions.map((option) {
-                  final actionType = option.$1;
+                children: filteredActionCatalog.map((action) {
+                  final actionType = action.type;
                   final selected = store.draftActions.contains(actionType);
                   return FilterChip(
-                    label: Text(option.$2),
+                    label: Text('${action.label} (${action.type})'),
                     selected: selected,
                     onSelected: (_) => store.toggleDraftAction(actionType),
                   );
