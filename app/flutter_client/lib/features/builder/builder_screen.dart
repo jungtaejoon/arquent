@@ -21,6 +21,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
   late final TextEditingController _descriptionController;
   late final TextEditingController _usageController;
   late final TextEditingController _actionSearchController;
+  String? _selectedTemplateId;
   String? _selectedTagFilter;
   String _actionSearchQuery = '';
 
@@ -87,6 +88,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
           );
           final updated = store.activeDraftUpdatedAt.toLocal().toIso8601String().replaceFirst('T', ' ');
           final availableTags = store.allDraftTags.toList()..sort();
+          final templates = store.availableTemplates;
           final actionQuery = _actionSearchQuery.trim().toLowerCase();
           final filteredActionCatalog = actionCatalog.where((action) {
             if (actionQuery.isEmpty) {
@@ -171,6 +173,55 @@ class _BuilderScreenState extends State<BuilderScreen> {
               ),
               const SizedBox(height: 8),
               Text('Last edited: $updated'),
+              const SizedBox(height: 8),
+              const Text('Quick Templates'),
+              const SizedBox(height: 6),
+              const Text('용어를 찾기 전에 템플릿으로 시작하고 필요한 부분만 수정하세요.'),
+              const SizedBox(height: 8),
+              DropdownButtonFormField<String>(
+                value: _selectedTemplateId,
+                decoration: const InputDecoration(
+                  labelText: 'Template',
+                  border: OutlineInputBorder(),
+                ),
+                items: templates
+                    .map(
+                      (template) => DropdownMenuItem(
+                        value: template.id,
+                        child: Text(template.name),
+                      ),
+                    )
+                    .toList(growable: false),
+                onChanged: (value) {
+                  setState(() {
+                    _selectedTemplateId = value;
+                  });
+                },
+              ),
+              const SizedBox(height: 8),
+              Wrap(
+                spacing: 8,
+                runSpacing: 8,
+                children: [
+                  FilledButton(
+                    onPressed: _selectedTemplateId == null
+                        ? null
+                        : () => store.applyTemplateToActiveDraft(_selectedTemplateId!),
+                    child: const Text('Apply Template'),
+                  ),
+                  ...templates.take(3).map(
+                    (template) => OutlinedButton(
+                      onPressed: () {
+                        setState(() {
+                          _selectedTemplateId = template.id;
+                        });
+                        store.applyTemplateToActiveDraft(template.id);
+                      },
+                      child: Text(template.name),
+                    ),
+                  ),
+                ],
+              ),
               const SizedBox(height: 8),
               Row(
                 children: [

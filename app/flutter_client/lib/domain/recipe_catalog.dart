@@ -32,6 +32,30 @@ class ActionDefinition {
   final Map<String, dynamic> defaultParams;
 }
 
+class RecipeTemplateDefinition {
+  const RecipeTemplateDefinition({
+    required this.id,
+    required this.name,
+    required this.description,
+    required this.usageSteps,
+    required this.triggerType,
+    required this.riskLevel,
+    required this.actions,
+    required this.tags,
+    this.actionParamOverrides = const {},
+  });
+
+  final String id;
+  final String name;
+  final String description;
+  final List<String> usageSteps;
+  final String triggerType;
+  final String riskLevel;
+  final List<String> actions;
+  final List<String> tags;
+  final Map<String, Map<String, dynamic>> actionParamOverrides;
+}
+
 const triggerCatalog = <TriggerDefinition>[
   TriggerDefinition(
     type: 'trigger.manual',
@@ -275,4 +299,87 @@ Map<String, dynamic> defaultParamsForActionType(String type) {
     };
   }
   return Map<String, dynamic>.from(definition.defaultParams);
+}
+
+const recipeTemplates = <RecipeTemplateDefinition>[
+  RecipeTemplateDefinition(
+    id: 'template.web_quick_summary',
+    name: 'Web Quick Summary',
+    description: 'URL 입력을 받아 페이지를 요청하고 핵심 내용을 요약합니다.',
+    usageSteps: [
+      'Run Local 실행 시 URL 입력',
+      '요청 완료 후 요약 텍스트 확인',
+      '필요 시 알림 내용을 복사/공유',
+    ],
+    triggerType: 'trigger.manual',
+    riskLevel: 'Standard',
+    actions: ['network.request', 'text.summarize', 'notification.send'],
+    tags: ['web', 'summary', 'productivity'],
+    actionParamOverrides: {
+      'network.request': {'method': 'GET', 'url_from_input': true, 'timeout_ms': 12000},
+      'text.summarize': {'source': 'http_body', 'max_sentences': 5, 'language': 'ko'},
+      'notification.send': {'title': '웹 요약 완료', 'body_from': 'summary'},
+    },
+  ),
+  RecipeTemplateDefinition(
+    id: 'template.clipboard_clean',
+    name: 'Clipboard Clean + Notify',
+    description: '클립보드 텍스트를 정리한 뒤 결과를 알림으로 보여줍니다.',
+    usageSteps: [
+      '클립보드에 원문 복사',
+      'Run Local 실행',
+      '정리된 결과를 알림으로 확인',
+    ],
+    triggerType: 'trigger.hotkey',
+    riskLevel: 'Standard',
+    actions: ['clipboard.read', 'transform.regex_clean', 'notification.send'],
+    tags: ['clipboard', 'cleaning', 'text'],
+    actionParamOverrides: {
+      'notification.send': {'title': '정리 완료', 'body_from': 'cleaned_text'},
+    },
+  ),
+  RecipeTemplateDefinition(
+    id: 'template.receipt_to_csv',
+    name: 'Receipt OCR to CSV',
+    description: '영수증 이미지를 텍스트로 추출해 CSV 라인 형태로 만듭니다.',
+    usageSteps: [
+      '카메라 촬영 또는 이미지 입력 준비',
+      'Run Local 실행',
+      'CSV 라인을 알림 또는 파일로 확인',
+    ],
+    triggerType: 'trigger.manual',
+    riskLevel: 'Sensitive',
+    actions: ['camera.capture', 'transform.ocr_receipt', 'notification.send'],
+    tags: ['ocr', 'receipt', 'finance'],
+    actionParamOverrides: {
+      'notification.send': {'title': '영수증 처리 완료', 'body_from': 'expense_csv_line'},
+    },
+  ),
+  RecipeTemplateDefinition(
+    id: 'template.voice_todo',
+    name: 'Voice Memo to TODO',
+    description: '음성 녹음을 텍스트로 변환하고 요약 TODO를 생성합니다.',
+    usageSteps: [
+      'Run Local 실행',
+      '짧게 음성 녹음',
+      '변환/요약된 TODO 확인',
+    ],
+    triggerType: 'trigger.manual',
+    riskLevel: 'Sensitive',
+    actions: ['microphone.record', 'transform.speech_to_text', 'notification.send'],
+    tags: ['voice', 'todo', 'productivity'],
+    actionParamOverrides: {
+      'microphone.record': {'max_seconds': 10},
+      'notification.send': {'title': 'TODO 변환 완료', 'body_from': 'transcript'},
+    },
+  ),
+];
+
+RecipeTemplateDefinition? recipeTemplateById(String id) {
+  for (final template in recipeTemplates) {
+    if (template.id == id) {
+      return template;
+    }
+  }
+  return null;
 }

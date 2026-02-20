@@ -134,6 +134,7 @@ class AppStore extends ChangeNotifier {
   String get draftTriggerType => _activeDraft.triggerType;
   Set<String> get draftActions => _activeDraft.actions;
   Map<String, Map<String, dynamic>> get draftActionParams => _activeDraft.actionParams;
+  List<RecipeTemplateDefinition> get availableTemplates => recipeTemplates;
 
   Future<void> publishDemoRecipe() async {
     await _withBusy(() async {
@@ -244,6 +245,48 @@ class AppStore extends ChangeNotifier {
   void updateDraftTrigger(String value) {
     _activeDraft.triggerType = value;
     _touchActiveDraft();
+    notifyListeners();
+  }
+
+  void applyTemplateToActiveDraft(String templateId) {
+    final template = recipeTemplateById(templateId);
+    if (template == null) {
+      status = 'Template not found';
+      notifyListeners();
+      return;
+    }
+
+    _activeDraft.name = template.name;
+    _activeDraft.description = template.description;
+    _activeDraft.usageSteps
+      ..clear()
+      ..addAll(template.usageSteps);
+    _activeDraft.riskLevel = template.riskLevel;
+    _activeDraft.triggerType = template.triggerType;
+    _activeDraft.actions
+      ..clear()
+      ..addAll(template.actions);
+    _activeDraft.tags
+      ..clear()
+      ..addAll(template.tags.map((tag) => tag.toLowerCase()));
+
+    _activeDraft.actionParams
+      ..clear()
+      ..addEntries(
+        template.actions.map((actionType) {
+          final defaults = _defaultParamsForAction(actionType);
+          final overrides = template.actionParamOverrides[actionType] ?? const {};
+          final merged = Map<String, dynamic>.from(defaults)..addAll(overrides);
+          return MapEntry(actionType, merged);
+        }),
+      );
+
+    if (_activeDraft.recipeId == 'local.custom.recipe' || _activeDraft.recipeId.trim().isEmpty) {
+      _activeDraft.recipeId = template.id.replaceAll('template.', 'local.');
+    }
+
+    _touchActiveDraft();
+    status = 'Applied template: ${template.name}';
     notifyListeners();
   }
 
