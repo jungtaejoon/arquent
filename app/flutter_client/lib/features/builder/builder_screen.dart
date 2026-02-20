@@ -50,9 +50,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
   @override
   Widget build(BuildContext context) {
     final store = AppStore.instance;
-    // Calculate values before returning the widget tree to avoid logic inside build if possible,
-    // but here we need them inside AnimatedBuilder for reactivity.
-    
+
     return DefaultTabController(
       length: 3,
       child: AppScaffoldShell(
@@ -118,7 +116,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
 
             return TabBarView(
               children: [
-                // TAB 1: Info (Metadata)
+                // TAB 1: Info (Metadata + Display)
                 ListView(
                   padding: const EdgeInsets.all(16),
                   children: [
@@ -127,6 +125,8 @@ class _BuilderScreenState extends State<BuilderScreen> {
                     ),
                     const Divider(height: 32),
                     _buildBasicInfoSection(context, store, templates, updated),
+                    const Divider(height: 32),
+                    _buildDisplaySection(context, store),
                   ],
                 ),
 
@@ -406,6 +406,71 @@ class _BuilderScreenState extends State<BuilderScreen> {
     );
   }
 
+  Widget _buildDisplaySection(BuildContext context, AppStore store) {
+    final display = store.draftDisplay;
+    return Column(
+      crossAxisAlignment: CrossAxisAlignment.start,
+      children: [
+        const Text('Display Settings', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+        const Text('Configure how this recipe appears in the dashboard.', style: TextStyle(color: Colors.grey)),
+        const SizedBox(height: 16),
+        Row(
+           children: [
+             Expanded(
+               child: DropdownButtonFormField<String>(
+                 value: display['icon'] as String? ?? 'bolt',
+                 decoration: const InputDecoration(
+                   labelText: 'Icon',
+                   border: OutlineInputBorder(),
+                   prefixIcon: Icon(Icons.image),
+                 ),
+                 items: const [
+                   DropdownMenuItem(value: 'bolt', child: Text('Bolt (Default)')),
+                   DropdownMenuItem(value: 'play_arrow', child: Text('Play')),
+                   DropdownMenuItem(value: 'timer', child: Text('Timer')),
+                   DropdownMenuItem(value: 'notifications', child: Text('Notification')),
+                   DropdownMenuItem(value: 'star', child: Text('Star')),
+                 ],
+                 onChanged: (value) => store.updateDraftDisplay('icon', value),
+               ),
+             ),
+             const SizedBox(width: 16),
+             Expanded(
+               child: DropdownButtonFormField<String>(
+                 value: display['color'] as String? ?? 'blue',
+                 decoration: const InputDecoration(
+                   labelText: 'Color',
+                   border: OutlineInputBorder(),
+                   prefixIcon: Icon(Icons.palette),
+                 ),
+                 items: const [
+                   DropdownMenuItem(value: 'blue', child: Text('Blue')),
+                   DropdownMenuItem(value: 'green', child: Text('Green')),
+                   DropdownMenuItem(value: 'orange', child: Text('Orange')),
+                   DropdownMenuItem(value: 'red', child: Text('Red')),
+                   DropdownMenuItem(value: 'purple', child: Text('Purple')),
+                 ],
+                 onChanged: (value) => store.updateDraftDisplay('color', value),
+               ),
+             ),
+           ],
+        ),
+        if (store.draftTriggers.any((t) => t.type == 'trigger.manual')) ...[
+           const SizedBox(height: 16),
+           TextFormField(
+             initialValue: display['button_label'] as String? ?? 'Run Recipe',
+             decoration: const InputDecoration(
+               labelText: 'Manual Button Label',
+               border: OutlineInputBorder(),
+               helperText: 'Text shown on the manual trigger button',
+             ),
+             onChanged: (value) => store.updateDraftDisplay('button_label', value),
+           ),
+        ],
+      ],
+    );
+  }
+
   Widget _buildTriggerSection(BuildContext context, AppStore store) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -414,7 +479,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
            mainAxisAlignment: MainAxisAlignment.spaceBetween,
            children: [
              const Text('Triggers', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextButton.icon(
+              OutlinedButton.icon(
                 onPressed: () {
                    Navigator.of(context).pushNamed(AppRoutes.triggerSetup);
                 },
@@ -480,7 +545,7 @@ class _BuilderScreenState extends State<BuilderScreen> {
            mainAxisAlignment: MainAxisAlignment.spaceBetween,
            children: [
              const Text('Actions', style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
-              TextButton.icon(
+              OutlinedButton.icon(
                 onPressed: () {
                    Navigator.of(context).pushNamed(AppRoutes.actionSetup);
                 },

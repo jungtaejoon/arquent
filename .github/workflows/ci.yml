@@ -2,11 +2,11 @@ name: CI
 
 on:
   push:
-    branches: [main]
+    branches: [main, staging]
   pull_request:
 
 jobs:
-  rust-core:
+  rust-core-tests:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -18,7 +18,7 @@ jobs:
       - name: Run Rust tests
         run: cargo test --all-targets
 
-  cloud:
+  cloud-tests:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -34,10 +34,8 @@ jobs:
         run: npm ci
       - name: Test
         run: npm test
-      - name: Build
-        run: npm run build
 
-  flutter-web:
+  flutter-tests:
     runs-on: ubuntu-latest
     defaults:
       run:
@@ -51,5 +49,79 @@ jobs:
         run: flutter pub get
       - name: Widget tests
         run: flutter test test/widget/ux_flow_test.dart
+
+  cloud-build-deploy:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    needs: [cloud-tests]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/cloud
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: npm
+          cache-dependency-path: app/cloud/package-lock.json
+      - name: Install
+        run: npm ci
+      - name: Build
+        run: npm run build
+
+  flutter-web-build-deploy:
+    if: github.event_name == 'push' && (github.ref == 'refs/heads/main' || github.ref == 'refs/heads/staging')
+    needs: [flutter-tests]
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: app/flutter_client
+    steps:
+      - uses: actions/checkout@v4
+      - uses: subosito/flutter-action@v2
+        with:
+          channel: stable
+      - name: Pub get
+        run: flutter pub get
       - name: Build web
         run: flutter build web --release --dart-define=API_BASE_URL=https://api.example.com
+
+  smoke-test-staging:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/staging'
+    needs: [cloud-build-deploy, flutter-web-build-deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required staging URLs
+        run: |
+          if [ -z "${{ vars.STAGING_API_URL }}" ] || [ -z "${{ vars.STAGING_WEB_URL }}" ]; then
+            echo "Missing repository variables: STAGING_API_URL and/or STAGING_WEB_URL"
+            echo "Set both variables in GitHub repository settings to enable smoke test."
+            exit 1
+          fi
+      - name: API health (staging)
+        run: |
+          curl -fsSL "${{ vars.STAGING_API_URL }}/marketplace/recipes" > /tmp/staging_api.json
+          head -c 300 /tmp/staging_api.json
+      - name: Web health (staging)
+        run: |
+          curl -fsSL -I "${{ vars.STAGING_WEB_URL }}" | head -n 20
+
+  smoke-test-prod:
+    if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+    needs: [cloud-build-deploy, flutter-web-build-deploy]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Check required production URLs
+        run: |
+          if [ -z "${{ vars.PROD_API_URL }}" ] || [ -z "${{ vars.PROD_WEB_URL }}" ]; then
+            echo "Missing repository variables: PROD_API_URL and/or PROD_WEB_URL"
+            echo "Set both variables in GitHub repository settings to enable smoke test."
+            exit 1
+          fi
+      - name: API health (production)
+        run: |
+          curl -fsSL "${{ vars.PROD_API_URL }}/marketplace/recipes" > /tmp/prod_api.json
+          head -c 300 /tmp/prod_api.json
+      - name: Web health (production)
+        run: |
+          curl -fsSL -I "${{ vars.PROD_WEB_URL }}" | head -n 20

@@ -21,10 +21,12 @@ class RecipeDraft {
     required this.triggerMode,
     required List<RecipeAction> actions,
     required Set<String> tags,
+    Map<String, dynamic> display = const {},
   })  : actions = List<RecipeAction>.from(actions),
         triggers = List<RecipeTrigger>.from(triggers),
         tags = Set<String>.from(tags),
-        usageSteps = List<String>.from(usageSteps);
+        usageSteps = List<String>.from(usageSteps),
+        display = Map<String, dynamic>.from(display);
 
   String name;
   DateTime updatedAt;
@@ -37,6 +39,7 @@ class RecipeDraft {
   String triggerMode;
   final List<RecipeAction> actions;
   final Set<String> tags;
+  final Map<String, dynamic> display;
 
   RecipeDraft copy() {
     return RecipeDraft(
@@ -51,6 +54,7 @@ class RecipeDraft {
       triggerMode: triggerMode,
       actions: actions.map((a) => a.copy()).toList(),
       tags: tags,
+      display: Map<String, dynamic>.from(display),
     );
   }
 
@@ -86,6 +90,10 @@ class RecipeDraft {
         ),
       ],
       tags: {},
+      display: {
+        'icon': 'bolt',
+        'color': 'blue',
+      },
     );
   }
 }
@@ -147,7 +155,18 @@ class AppStore extends ChangeNotifier {
   List<RecipeTrigger> get draftTriggers => _activeDraft.triggers;
   String get draftTriggerMode => _activeDraft.triggerMode;
   List<RecipeAction> get draftActions => _activeDraft.actions;
+  Map<String, dynamic> get draftDisplay => _activeDraft.display;
   List<RecipeTemplateDefinition> get availableTemplates => recipeTemplates;
+
+  void updateDraftDisplay(String key, dynamic value) {
+    if (value == null) {
+      _activeDraft.display.remove(key);
+    } else {
+      _activeDraft.display[key] = value;
+    }
+    _activeDraft.updatedAt = DateTime.now();
+    notifyListeners();
+  }
 
   Future<void> publishDemoRecipe() async {
     await _withBusy(() async {

@@ -51,6 +51,14 @@ Set runtime env vars in hosting platform:
 - `PORT=4000` (or platform default)
 - `HOST=0.0.0.0`
 - `CORS_ORIGIN=https://<your-web-domain>`
+- `DATABASE_URL=postgres://...` (primary persistent storage; table auto-created)
+- `MARKETPLACE_DB_PATH=/data/marketplace.json` (optional fallback when DB is unavailable)
+
+Persistence requirement:
+
+- Recommended: use Railway Postgres and set `DATABASE_URL`.
+- The service auto-creates table `marketplace_packages`; manual table creation is not required.
+- Optional fallback: attach volume and use `MARKETPLACE_DB_PATH`.
 
 Health check endpoint for quick verification:
 
@@ -83,7 +91,30 @@ Cloudflare Pages build settings (if using Git integration):
 - Marketplace publish/refresh/install/run tested once on production URL
 - Sensitive recipe policy still enforced (user-initiated gate)
 
-## 6) User input needed
+## 6) Staging + production strategy (recommended)
+
+- Branches:
+	- `staging` → staging deployment validation
+	- `main` → production deployment
+- GitHub Actions behavior (`.github/workflows/ci.yml`):
+	- Pull Request: tests only
+	- Push to `staging`/`main`: tests + build
+	- Push to `staging`: staging smoke test
+	- Push to `main`: production smoke test
+
+Required GitHub Repository Variables:
+
+- `STAGING_API_URL`
+- `STAGING_WEB_URL`
+- `PROD_API_URL`
+- `PROD_WEB_URL`
+
+Smoke test checks:
+
+- API `GET /marketplace/recipes` returns success
+- Web domain returns successful HTTP headers
+
+## 7) User input needed
 
 Please provide these 2 values so I can complete final production wiring:
 

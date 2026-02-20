@@ -1,9 +1,29 @@
 import crypto from 'node:crypto';
+import { rmSync } from 'node:fs';
+import { tmpdir } from 'node:os';
+import path from 'node:path';
 
 import nacl from 'tweetnacl';
-import { describe, expect, test } from 'vitest';
+import { afterEach, beforeEach, describe, expect, test } from 'vitest';
 
 import { buildServer } from '../src/server.js';
+import { resetStoreForTests } from '../src/store.js';
+
+let dbPath = '';
+
+beforeEach(() => {
+  dbPath = path.join(tmpdir(), `arquent-cloud-${Date.now()}-${Math.random().toString(36).slice(2)}.json`);
+  process.env.MARKETPLACE_DB_PATH = dbPath;
+  delete process.env.DATABASE_URL;
+});
+
+afterEach(async () => {
+  await resetStoreForTests();
+  if (dbPath) {
+    rmSync(dbPath, { force: true });
+  }
+  delete process.env.MARKETPLACE_DB_PATH;
+});
 
 describe('cloud api', () => {
   test('rejects publish with invalid signature', async () => {
