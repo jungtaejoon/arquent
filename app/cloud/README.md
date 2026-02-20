@@ -37,6 +37,14 @@ npm run dev
 	- `HOST=0.0.0.0`
 	- `PORT=4000` (or platform default)
 	- `CORS_ORIGIN=https://<your-web-domain>`
+	- `DATABASE_URL=postgres://...` (recommended; table auto-created on first boot)
+	- `MARKETPLACE_DB_PATH=/data/marketplace.json` (fallback when DATABASE_URL is not set)
+
+Persistence note:
+
+- If `DATABASE_URL` is set, marketplace data is persisted in Postgres.
+- Table `marketplace_packages` is created automatically at startup.
+- If `DATABASE_URL` is missing, file-persistence fallback is used.
 
 Health check:
 

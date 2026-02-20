@@ -51,6 +51,14 @@ Set runtime env vars in hosting platform:
 - `PORT=4000` (or platform default)
 - `HOST=0.0.0.0`
 - `CORS_ORIGIN=https://<your-web-domain>`
+- `DATABASE_URL=postgres://...` (primary persistent storage; table auto-created)
+- `MARKETPLACE_DB_PATH=/data/marketplace.json` (optional fallback when DB is unavailable)
+
+Persistence requirement:
+
+- Recommended: use Railway Postgres and set `DATABASE_URL`.
+- The service auto-creates table `marketplace_packages`; manual table creation is not required.
+- Optional fallback: attach volume and use `MARKETPLACE_DB_PATH`.
 
 Health check endpoint for quick verification:
 

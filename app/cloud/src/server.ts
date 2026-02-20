@@ -90,8 +90,9 @@ export function buildServer() {
   });
 
   app.get('/marketplace/recipes', async () => {
+    const packages = await listPackages();
     return {
-      recipes: listPackages().map(summarizePackage),
+      recipes: packages.map(summarizePackage),
     };
   });
 
@@ -124,7 +125,7 @@ export function buildServer() {
       return reply.code(400).send({ error: 'invalid_signature' });
     }
 
-    putPackage({
+    await putPackage({
       id: parsed.data.id,
       manifest: parsed.data.manifest,
       flow: parsed.data.flow,
@@ -198,7 +199,7 @@ export function buildServer() {
       return reply.code(500).send({ error: 'demo_signature_generation_failed' });
     }
 
-    putPackage({
+    await putPackage({
       id,
       manifest,
       flow,
@@ -234,7 +235,7 @@ export function buildServer() {
     const publicKeyBase64 = Buffer.from(publicDer).subarray(-32).toString('base64');
     const signatureBase64 = signature.toString('base64');
 
-    putPackage({
+    await putPackage({
       id: parsed.data.id,
       manifest: parsed.data.manifest,
       flow: parsed.data.flow,
@@ -248,7 +249,7 @@ export function buildServer() {
 
   app.get('/marketplace/package/:id', async (request, reply) => {
     const params = request.params as { id: string };
-    const pkg = getPackage(params.id);
+    const pkg = await getPackage(params.id);
     if (!pkg) {
       return reply.code(404).send({ error: 'not_found' });
     }
@@ -288,7 +289,8 @@ export function buildServer() {
   });
 
   app.get('/sync/pull', async () => {
-    return { recipes: listPackages().map((pkg) => pkg.id) };
+    const packages = await listPackages();
+    return { recipes: packages.map((pkg) => pkg.id) };
   });
 
   return app;
