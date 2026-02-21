@@ -522,7 +522,10 @@ class _BuilderScreenState extends State<BuilderScreen> {
                       subtitle: Text(t.params.toString()),
                       trailing: IconButton(
                         icon: const Icon(Icons.edit),
-                        onPressed: () => Navigator.of(context).pushNamed(AppRoutes.triggerSetup),
+                        onPressed: () => Navigator.of(context).pushNamed(
+                          AppRoutes.triggerSetup,
+                          arguments: {'triggerId': t.id},
+                        ),
                       ),
                     )),
                ],
@@ -582,7 +585,10 @@ class _BuilderScreenState extends State<BuilderScreen> {
                         isThreeLine: true,
                         trailing: IconButton(
                            icon: const Icon(Icons.settings),
-                           onPressed: () => Navigator.of(context).pushNamed(AppRoutes.actionSetup),
+                           onPressed: () => Navigator.of(context).pushNamed(
+                             AppRoutes.actionSetup,
+                             arguments: {'actionId': store.draftActions[i].id},
+                           ),
                         ),
                       ),
                     ),

@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../app/scaffold_shell.dart';
 import '../../domain/recipe_catalog.dart';
+import '../../domain/recipe_models.dart';
 import '../../state/app_store.dart';
 
 class ActionSetupScreen extends StatefulWidget {
@@ -24,22 +25,100 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
   @override
   Widget build(BuildContext context) {
     final store = AppStore.instance;
-    final normalizedQuery = _query.trim().toLowerCase();
-    final filteredActions = actionCatalog.where((action) {
-      if (normalizedQuery.isEmpty) {
-        return true;
-      }
-      return action.type.toLowerCase().contains(normalizedQuery) ||
-          action.label.toLowerCase().contains(normalizedQuery) ||
-          action.category.toLowerCase().contains(normalizedQuery) ||
-          action.guide.toLowerCase().contains(normalizedQuery);
-    }).toList(growable: false);
+    final args = ModalRoute.of(context)?.settings.arguments as Map<String, dynamic>?;
+    final targetActionId = args?['actionId'] as String?;
 
     return AppScaffoldShell(
-      title: 'Action Setup',
+      title: targetActionId != null ? 'Configure Action' : 'Action Setup',
       body: AnimatedBuilder(
         animation: store,
         builder: (context, _) {
+          // Case 1: Specific Action Configuration
+          if (targetActionId != null) {
+            final action = store.draftActions.firstWhere(
+              (a) => a.id == targetActionId,
+              orElse: () => RecipeAction(id: '', type: 'unknown', params: {}),
+            );
+
+            if (action.id.isEmpty) {
+              return const Center(child: Text('Action not found'));
+            }
+
+            final def = actionDefinitionByType(action.type);
+            if (def == null) {
+              return Center(child: Text('Unknown action type: ${action.type}'));
+            }
+
+            return ListView(
+              padding: const EdgeInsets.all(16),
+              children: [
+                ListTile(
+                  leading: CircleAvatar(
+                    child: const Icon(Icons.settings),
+                    backgroundColor: Colors.blue[100],
+                    foregroundColor: Colors.blue[800],
+                  ),
+                  title: Text(def.label, style: const TextStyle(fontWeight: FontWeight.bold)),
+                  subtitle: Text(def.guide),
+                ),
+                const Divider(),
+                if (def.parameters.isEmpty)
+                  const Padding(
+                    padding: EdgeInsets.all(16.0),
+                    child: Text('No configurable parameters for this action.'),
+                  )
+                else
+                  ...def.parameters.map((paramDef) {
+                    final currentValue = action.params[paramDef.key] ?? paramDef.defaultValue ?? '';
+                    return Padding(
+                      padding: const EdgeInsets.only(bottom: 16.0),
+                      child: _buildParameterInput(paramDef, currentValue, (val) {
+                        store.updateDraftActionParam(action.id, paramDef.key, val);
+                      }, keyPrefix: action.id),
+                    );
+                  }),
+                 if (def.outputs.isNotEmpty) ...[
+                    const SizedBox(height: 16),
+                    Row(
+                      children: const [
+                        Icon(Icons.output, size: 16, color: Colors.blueGrey),
+                        SizedBox(width: 4),
+                        Text('Generates Variables:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
+                      ],
+                    ),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                        color: Colors.blueGrey.withOpacity(0.05),
+                        borderRadius: BorderRadius.circular(4),
+                        border: Border.all(color: Colors.blueGrey.withOpacity(0.2)),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: def.outputs.entries.map((e) {
+                          return Text('• ${e.key}: ${e.value}', style: const TextStyle(height: 1.5));
+                        }).toList(),
+                      ),
+                    ),
+                 ],
+              ],
+            );
+          }
+
+          // Case 2: General Setup (Add/Remove Actions)
+          final normalizedQuery = _query.trim().toLowerCase();
+          final filteredActions = actionCatalog.where((action) {
+            if (normalizedQuery.isEmpty) {
+              return true;
+            }
+            return action.type.toLowerCase().contains(normalizedQuery) ||
+                action.label.toLowerCase().contains(normalizedQuery) ||
+                action.category.toLowerCase().contains(normalizedQuery) ||
+                action.guide.toLowerCase().contains(normalizedQuery);
+          }).toList(growable: false);
+
           return ListView(
             padding: const EdgeInsets.all(16),
             children: [
@@ -102,6 +181,15 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
                     child: ListTile(
                       title: Text(action.type),
                       subtitle: const Text('No editable params'),
+                      trailing: IconButton(
+                        icon: const Icon(Icons.settings),
+                        onPressed: () {
+                           Navigator.of(context).pushNamed(
+                             '/action-setup', 
+                             arguments: {'actionId': action.id}
+                           );
+                        },
+                      ),
                     ),
                   );
                 }
@@ -111,121 +199,32 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(action.type, style: Theme.of(context).textTheme.titleMedium),
+                        Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                          children: [
+                            Text(action.type, style: Theme.of(context).textTheme.titleMedium),
+                            IconButton(
+                              icon: const Icon(Icons.settings),
+                              onPressed: () {
+                                 Navigator.of(context).pushNamed(
+                                   '/action-setup', 
+                                   arguments: {'actionId': action.id}
+                                 );
+                              },
+                            ),
+                          ],
+                        ),
+                        // ... existing inline params ...
                         const SizedBox(height: 8),
                         ...def.parameters.map((paramDef) {
                           final currentValue = params[paramDef.key] ?? paramDef.defaultValue ?? '';
-                          
-                          if (paramDef.type == ParameterType.boolean) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: SwitchListTile(
-                                title: Text(paramDef.label),
-                                value: currentValue == true || currentValue == 'true',
-                                onChanged: (value) {
-                                  store.updateDraftActionParam(action.id, paramDef.key, value);
-                                },
-                              ),
-                            );
-                          } else if (paramDef.type == ParameterType.enumType && paramDef.options != null) {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: DropdownButtonFormField<String>(
-                                value: currentValue.toString(),
-                                decoration: InputDecoration(
-                                  labelText: paramDef.label,
-                                  border: const OutlineInputBorder(),
-                                ),
-                                items: paramDef.options!.map((option) {
-                                  return DropdownMenuItem(
-                                    value: option,
-                                    child: Text(option),
-                                  );
-                                }).toList(),
-                                onChanged: (value) {
-                                  if (value != null) {
-                                    store.updateDraftActionParam(action.id, paramDef.key, value);
-                                  }
-                                },
-                              ),
-                            );
-                          } else {
-                            return Padding(
-                              padding: const EdgeInsets.only(bottom: 8),
-                              child: TextFormField(
-                                key: ValueKey('${action.id}.${paramDef.key}'),
-                                initialValue: currentValue.toString(),
-                                decoration: InputDecoration(
-                                  labelText: paramDef.label + (paramDef.required ? ' *' : ''),
-                                  border: const OutlineInputBorder(),
-                                ),
-                                keyboardType: paramDef.type == ParameterType.number 
-                                    ? TextInputType.number 
-                                    : TextInputType.text,
-                                onChanged: (value) {
-                                  if (paramDef.type == ParameterType.number) {
-                                    final numValue = num.tryParse(value);
-                                    if (numValue != null) {
-                                      store.updateDraftActionParam(action.id, paramDef.key, numValue);
-                                    } else {
-                                      store.updateDraftActionParam(action.id, paramDef.key, value);
-                                    }
-                                  } else {
-                                    store.updateDraftActionParam(action.id, paramDef.key, value);
-                                  }
-                                },
-                              ),
-                            );
-                          }
+                          return Padding(
+                            padding: const EdgeInsets.only(bottom: 8.0),
+                            child: _buildParameterInput(paramDef, currentValue, (val) {
+                              store.updateDraftActionParam(action.id, paramDef.key, val);
+                            }, keyPrefix: action.id),
+                          );
                         }),
-                        if (def.outputs.isNotEmpty) ...[
-                          const SizedBox(height: 16),
-                          Row(
-                            children: const [
-                              Icon(Icons.output, size: 16, color: Colors.blueGrey),
-                              SizedBox(width: 4),
-                              Text('Generates Variables:', style: TextStyle(fontWeight: FontWeight.bold, color: Colors.blueGrey)),
-                            ],
-                          ),
-                          const SizedBox(height: 8),
-                          Container(
-                            width: double.infinity,
-                            padding: const EdgeInsets.all(8),
-                            decoration: BoxDecoration(
-                              color: Colors.blueGrey.withOpacity(0.05),
-                              borderRadius: BorderRadius.circular(4),
-                              border: Border.all(color: Colors.blueGrey.withOpacity(0.2)),
-                            ),
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: def.outputs.entries.map((e) => Padding(
-                                padding: const EdgeInsets.only(bottom: 4),
-                                child: SelectableText.rich(
-                                  TextSpan(
-                                    children: [
-                                      const TextSpan(
-                                        text: '{{state.',
-                                        style: TextStyle(fontFamily: 'Courier', fontSize: 13, color: Colors.black87),
-                                      ),
-                                      TextSpan(
-                                        text: e.key,
-                                        style: const TextStyle(fontFamily: 'Courier', fontWeight: FontWeight.bold, fontSize: 13, color: Colors.blue),
-                                      ),
-                                      const TextSpan(
-                                        text: '}}',
-                                        style: TextStyle(fontFamily: 'Courier', fontSize: 13, color: Colors.black87),
-                                      ),
-                                      TextSpan(
-                                        text: ' : ${e.value}',
-                                        style: const TextStyle(fontSize: 12, color: Colors.grey),
-                                      ),
-                                    ],
-                                  ),
-                                ),
-                              )).toList(),
-                            ),
-                          ),
-                        ],
                       ],
                     ),
                   ),
@@ -238,5 +237,58 @@ class _ActionSetupScreenState extends State<ActionSetupScreen> {
         },
       ),
     );
+  }
+
+  Widget _buildParameterInput(ParameterDefinition paramDef, dynamic currentValue, Function(dynamic) onChanged, {String? keyPrefix}) {
+    if (paramDef.type == ParameterType.boolean) {
+      return SwitchListTile(
+        title: Text(paramDef.label),
+        value: currentValue == true || currentValue == 'true',
+        onChanged: onChanged,
+      );
+    } else if (paramDef.type == ParameterType.enumType && paramDef.options != null) {
+      return DropdownButtonFormField<String>(
+        value: currentValue.toString(),
+        decoration: InputDecoration(
+          labelText: paramDef.label,
+          border: const OutlineInputBorder(),
+        ),
+        items: paramDef.options!.map((option) {
+          return DropdownMenuItem(
+            value: option,
+            child: Text(option),
+          );
+        }).toList(),
+        onChanged: (val) {
+          if (val != null) {
+            onChanged(val);
+          }
+        },
+      );
+    } else {
+      return TextFormField(
+        key: keyPrefix != null ? ValueKey('$keyPrefix.${paramDef.key}') : null,
+        initialValue: currentValue.toString(),
+        decoration: InputDecoration(
+          labelText: paramDef.label + (paramDef.required ? ' *' : ''),
+          border: const OutlineInputBorder(),
+        ),
+        keyboardType: paramDef.type == ParameterType.number 
+            ? TextInputType.number 
+            : TextInputType.text,
+        onChanged: (val) {
+          if (paramDef.type == ParameterType.number) {
+            final numValue = num.tryParse(val);
+            if (numValue != null) {
+              onChanged(numValue);
+            } else {
+              onChanged(val);
+            }
+          } else {
+            onChanged(val);
+          }
+        },
+      );
+    }
   }
 }
